@@ -17,17 +17,17 @@ object Client {
 }
 
 
-class Client (context: ActorContext[Client.Command], connectedStore:ActorRef[Store.Command])extends AbstractBehavior[Client.Command](context) {
+class  Client private (context: ActorContext[Client.Command], connectedStore:ActorRef[Store.Command])extends AbstractBehavior[Client.Command](context) {
   import Client._
   override def onMessage(message: Command): Behavior[Command] = message match {
     case Get(key: String) => {
-      val responseActor=context.spawnAnonymous(Responses()) //ggf Probleme hier wegen namen
+      val responseActor=context.spawnAnonymous(Responses())
       connectedStore ! Store.Get(responseActor,key.getBytes())
       Behaviors.same
 
     }
     case Set(key:String, value:String) => {
-      val responseActor=context.spawnAnonymous(Responses()) //TODO ist hier anonymus ok oder sollte man mit benahment arbeiten
+      val responseActor=context.spawnAnonymous(Responses())
       connectedStore ! Store.Set(responseActor,key.getBytes(),value.getBytes())
       Behaviors.same
 
@@ -38,10 +38,6 @@ class Client (context: ActorContext[Client.Command], connectedStore:ActorRef[Sto
 
     }
   }
-
-    def ByteSequenceToString(input:Seq[Byte]):String={
-      return new String(input.toArray, "UTF-8")
-    }
 
 
 }

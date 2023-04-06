@@ -10,12 +10,4 @@ import akka.actor.typed.{ActorSystem, Behavior} // immer darauf achten, dass "ty
 
 object Main extends App {
   val guard = ActorSystem(Guard(), "guard")
-//  println("Starting ...")
-//
-//  val system = ActorSystem(Guard(), "hfu")
-//  // Läuft unendlich lang
-//  println("Press any key to terminate ...")
-//  Console.in.read()
-//  system.terminate()
-//  println("Terminating ...") // Abarbeitungsreihenfolge ist anders als erwartet
 }

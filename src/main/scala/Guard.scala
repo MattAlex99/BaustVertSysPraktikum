@@ -14,15 +14,8 @@ object Guard {
       client1 ! Client.Get("DE")
       client1 ! Client.Get("IT")
       val reader = context.spawn(FileReader(), "reader")
-      val filename = "trip_data_1000_000.csv"
+      val filename = "trip_data_100.csv"
       reader ! FileReader.File(filename, client1)
-
-
-      //val store = ActorSystem(Store(),"mainStore")
-      //store.ref
-      //val ipaddr = Array[Byte](192.toByte, 168.toByte, 1, 9)
-      //store ! (context.self)
-      //print("end of guard")
       Behaviors.same
     }
   }
