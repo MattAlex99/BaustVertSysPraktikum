@@ -10,6 +10,7 @@ object Responses {
   case class SetResult(key: String, value: String) extends Result
   case class GetResultSuccessful(key: String, value: Option[String]) extends Result
 
+  case class CountResult(count:Integer) extends Result
 
 
   def apply(): Behavior[Result] = {
@@ -24,10 +25,14 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
   import Responses._
   override def onMessage(message: Responses.Result): Behavior[Responses.Result] = message match {
     case SetResult(key:String,value:String)=>{
-
       context.log.info("value of key " + key +" was set "+value)
       Behaviors.stopped
     }
+    case CountResult(count:Integer) => {
+      context.log.info("total number of stored keys is "+ count.toString )
+      Behaviors.stopped
+    }
+
     case GetResultSuccessful(key: String, value: Option[String]) => {
       value match {
         case None =>
@@ -37,7 +42,8 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
       Behaviors.stopped
     }
     case _ => {
-      context.log.info("not yet implemented")
+      context.log.info(message.toString)
+      context.log.info("Faulty Message (to Responses)")
       Behaviors.stopped
     }
   }

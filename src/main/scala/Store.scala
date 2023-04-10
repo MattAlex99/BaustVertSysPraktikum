@@ -1,16 +1,25 @@
-import Responses.{GetResultSuccessful, SetResult}
+import Responses.{CountResult, GetResultSuccessful, Result, SetResult}
+import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+
 import java.nio.charset.StandardCharsets
-import Responses.Result
 
 object Store{
   sealed trait Command
   case class Get(replyTo: ActorRef[Result], key: Seq[Byte]) extends Command
   case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Command
+  case class Count(replyTo: ActorRef[Result]) extends Command
+  private case class ListingResponse(listing: Receptionist.Listing) extends Command
+
+  val storeServiceKey: ServiceKey[Command] = ServiceKey[Command]("StoreService")
+
+
   def apply(): Behavior[Command] = {
     Behaviors.setup { context =>
-      context.log.info("Store created")
+      val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
+      context.system.receptionist ! Receptionist.Register(Store.storeServiceKey, context.self)
+      context.log.info("Store registered")
       new Store(context)
     }
   }
@@ -20,6 +29,7 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
   val storedData: scala.collection.mutable.Map[Seq[Byte],Seq[Byte]] = scala.collection.mutable.Map.empty[Seq[Byte],Seq[Byte]]
   import Store._
   override def onMessage(message: Command): Behavior[Command] = message match {
+
 
     //Processing Get requests
     case Get(replyTo: ActorRef[Result], key: Seq[Byte]) => {
@@ -34,6 +44,13 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
       Behaviors.same
     }
 
+    case Count(replyTo: ActorRef[Result]) => {
+      //count the number of stored elements
+      val result = storedData.size
+      replyTo ! CountResult(result)
+      Behaviors.same
+    }
+
     //Processing Set Requests
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       //Put the received value as the new one
@@ -45,7 +62,7 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
     }
 
     case _ => {
-      context.log.info("Unexpected Message received")
+      context.log.info("Unexpected Message received (by Store)")
       this
     }
   }

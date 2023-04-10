@@ -1,14 +1,18 @@
+import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+
 import java.io.File
 import java.util.Scanner
+import scala.annotation.tailrec
 object FileReader {
   sealed trait Message
   case class File(filename: String, client: ActorRef[Client.Command]) extends Message
+  val serviceKey: ServiceKey[Message] = ServiceKey[Message]("clientService")
 
   def apply(): Behavior[Message] = {
     Behaviors.setup { context =>
-      //store: ActorRef[Store.Command]
+      context.system.receptionist ! Receptionist.Register(serviceKey,context.self)
       new FileReader(context)
     }
   }
@@ -21,6 +25,7 @@ class FileReader (context: ActorContext[FileReader.Message])
   //import FileReader._
   import FileReader.Message
   import Client._
+  val batch_size=50
   override def onMessage(message: Message): Behavior[Message] = message match {
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       context.log.info("Reading Files by Line")
@@ -29,19 +34,38 @@ class FileReader (context: ActorContext[FileReader.Message])
       val reader = new Scanner(file)
       while (reader.hasNextLine) {
         //Process every read line
-        val line = reader.nextLine()
-        val values = line.split(",").map(_.trim)
-        client ! Client.Set(values(0), values(1))
-        println("Press enter to process the next entry")
-        scala.io.StdIn.readLine()
-        //println(line)
+        val currentBatch= getNextBatch(0,batch_size,List[(String,String)](),reader)
+        println("batch",currentBatch)
+        client ! Client.Set(currentBatch)
       }
-      Behaviors.same
+      Behaviors.stopped
     }
     case _ => {
       context.log.info("Unexpected Message received")
-      Behaviors.same
+      Behaviors.stopped
 
     }
   }
+
+  @tailrec
+  final def getNextBatch(currentCount: Integer, batchSize: Integer, currentValues: List[(String,String)], scanner: Scanner): List[(String,String)] = {
+    //TODO ersetzen mit den batch read
+    if (scanner.hasNextLine) {
+      if (currentCount == batchSize)
+        return currentValues
+      else {
+        val nextLine=scanner.nextLine()
+        val splitValues=nextLine.split(",")
+        val newValue= (splitValues(0),splitValues(1))
+        return getNextBatch(currentCount + 1,
+          batchSize,
+          currentValues++List(newValue),
+          scanner)
+      }
+    } else {
+      return currentValues
+    }
+
+  }
+
 }
