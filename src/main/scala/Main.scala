@@ -9,6 +9,11 @@ import java.time.InstantSource.system // immer darauf achten, dass "typed" drans
 
 
 
-object Main extends App {
-  val guard = ActorSystem(Guard(), "guard")
+object Main {
+  def main(args: Array[String]): Unit = {
+    val configuration = Utils.createConfiguration(args(0).toInt  )
+    val guard = ActorSystem(Guard(), "hfu", configuration)
+  }
+
+
 }

@@ -31,11 +31,11 @@ class  FileReaderStarter  (context: ActorContext[FileReaderStarter.Command],name
     case ListingResponse(listing)=>{
       //spawn one reader and make it send messages to every client
       val clients = listing.serviceInstances(Client.clientServiceKey)
-      val reader =context.spawn(FileReader(),namePrefix+Integer.toString(Random.nextInt(13)))
+      val reader =context.spawn(FileReader(),namePrefix+Integer.toString(Random.nextInt(10)))
 
       clients.foreach(client => reader ! FileReader.File("./trip_data_100.csv", client))
-      scala.io.StdIn.readLine()
       Behaviors.same //TODO rausfinden warum ich hier nicht beenden kann
+
     }
 
 
