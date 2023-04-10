@@ -10,16 +10,13 @@ object Store{
   case class Get(replyTo: ActorRef[Result], key: Seq[Byte]) extends Command
   case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Command
   case class Count(replyTo: ActorRef[Result]) extends Command
-  private case class ListingResponse(listing: Receptionist.Listing) extends Command
 
   val storeServiceKey: ServiceKey[Command] = ServiceKey[Command]("StoreService")
 
 
   def apply(): Behavior[Command] = {
     Behaviors.setup { context =>
-      val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
       context.system.receptionist ! Receptionist.Register(Store.storeServiceKey, context.self)
-      context.log.info("Store registered")
       new Store(context)
     }
   }

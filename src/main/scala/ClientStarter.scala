@@ -1,4 +1,3 @@
-import Client.ListingResponse
 import akka.actor.typed.Behavior
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -18,7 +17,6 @@ object ClientStarter {
       val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
       context.system.receptionist ! Receptionist.Register(serviceKey, context.self)
       context.system.receptionist ! Receptionist.Subscribe(Store.storeServiceKey, listingResponseAdapter)
-      println("starting client Starter and registering ")
       new ClientStarter(context,namePrefix)
     }
   }
@@ -29,11 +27,12 @@ class  ClientStarter  (context: ActorContext[ClientStarter.Command],namePrefix:S
 
   import ClientStarter._
 
+
   override def onMessage(message: Command): Behavior[Command] = message match {
+
     case ListingResponse(listing)=>{
-      print("starting Clients")
-      val stores = listing.serviceInstances(Store.storeServiceKey)
       //spawns one Client for every store that exists and ends actor
+      val stores = listing.serviceInstances(Store.storeServiceKey)
       stores.foreach(store => context.spawn(Client(store),namePrefix+Integer.toString(Random.nextInt(13))))
       Behaviors.same //TODO rausfinden warum ich hier nicht beenden kann
   }

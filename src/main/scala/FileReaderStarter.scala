@@ -1,4 +1,3 @@
-import Client.ListingResponse
 import akka.actor.typed.Behavior
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -30,14 +29,15 @@ class  FileReaderStarter  (context: ActorContext[FileReaderStarter.Command],name
   import FileReaderStarter._
   override def onMessage(message: Command): Behavior[Command] = message match {
     case ListingResponse(listing)=>{
-      print("starting FileReader")
+      //spawn one reader and make it send messages to every client
       val clients = listing.serviceInstances(Client.clientServiceKey)
-      //spawns one FileReaderStarter for every Client that exists and ends actor
       val reader =context.spawn(FileReader(),namePrefix+Integer.toString(Random.nextInt(13)))
 
       clients.foreach(client => reader ! FileReader.File("./trip_data_100.csv", client))
+      scala.io.StdIn.readLine()
       Behaviors.same //TODO rausfinden warum ich hier nicht beenden kann
     }
+
 
   }
 }
