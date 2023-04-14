@@ -1,17 +1,14 @@
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
+import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 
-import java.io.File
-import java.util.Scanner
-import scala.annotation.tailrec
 import scala.io.Source
-import scala.io.Source.fromFile
 import scala.util.Using
 object FileReader {
   sealed trait Message
   case class File(filename: String, client: ActorRef[Client.Command]) extends Message
-  val serviceKey: ServiceKey[Message] = ServiceKey[Message]("clientService")
+  val serviceKey: ServiceKey[Message] = ServiceKey[Message]("fileReader")
   private case class ListingResponse(listing: Receptionist.Listing) extends Message
 
   def apply(): Behavior[Message] = {
@@ -33,34 +30,22 @@ class FileReader (context: ActorContext[FileReader.Message])
   import FileReader.Message
   import FileReader.ListingResponse
   import Client._
-  val batch_size=4000
+  val batch_size=2000
   override def onMessage(message: Message): Behavior[Message] = message match {
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       context.log.info("Reading Files by Line")
       Using(Source.fromFile(filename)){ reader =>
         reader.getLines()
           .map(line => (line.split(",")(0), line.split(",")(1)))
-          .grouped(50).buffered
-          .foreach(batch =>client ! Client.Set(batch.toList) )
+          .grouped(batch_size)
+          .buffered
+          .foreach(batch =>  client ! Client.Set(batch.toList))
+        //.foreach(batch =>client ! Client.Set(batch.toList))
       }.get
-      //val lines = fromFile(filename)
-      //  .getLines()
-      //  .map(line => (line.split(",")(0),line.split(",")(1)))
-      //  .grouped(50)
-      //lines.foreach(batch => client ! Client.Set(batch.toList))
-
-      //Prepare a scanner to read line by line
-      //val file = new File(filename)
-      //val reader = new Scanner(file)
-      //while (reader.hasNextLine) {
-      //  //Process every read line
-      //  val currentBatch= getNextBatch(0,batch_size,List[(String,String)](),reader)
-      //  client ! Client.Set(currentBatch)
-      //}
-      //Thread.sleep(12000)
-      //context.log.info("sending count request")
+      println("press enter to get the count")
+      scala.io.StdIn.readLine()
       client ! Client.Count()
-      Behaviors.stopped
+      Behaviors.same
     }
     case ListingResponse(listing) => {
       //spawn one reader and make it send messages to every client
@@ -69,8 +54,7 @@ class FileReader (context: ActorContext[FileReader.Message])
         case 0 =>
         case _  =>
           println("Starting Reading Process")
-          clients.foreach(client => println(client))
-          clients.foreach(client => context.self ! FileReader.File("./trip_data_100.csv", client))
+          clients.foreach(client => context.self ! FileReader.File("../trip_data_1000_000.csv", client))
       }
 
       Behaviors.same
@@ -82,27 +66,9 @@ class FileReader (context: ActorContext[FileReader.Message])
     }
   }
 
-  @tailrec
-  final def getNextBatch(currentCount: Integer, batchSize: Integer, currentValues: List[(String,String)], scanner: Scanner): List[(String,String)] = {
-    //TODO ersetzen mit den batch read
-    // file reader ist fromFile
-    // batch lesen mit
-    if (scanner.hasNextLine) {
-      if (currentCount == batchSize)
-        return currentValues
-      else {
-        val nextLine=scanner.nextLine()
-        val splitValues=nextLine.split(",")
-        val newValue= (splitValues(0),splitValues(1))
-        return getNextBatch(currentCount + 1,
-          batchSize,
-          currentValues++List(newValue),
-          scanner)
-      }
-    } else {
-      return currentValues
+    def SetAndWait(client:ActorRef[Command],batch:Seq[(String,String)]): Unit ={
+      client ! Client.Set(batch.toList)
+      //Thread.sleep(150)
     }
-
-  }
 
 }

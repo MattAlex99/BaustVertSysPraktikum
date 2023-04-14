@@ -11,6 +11,8 @@ object Store{
   case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Command
   case class Count(replyTo: ActorRef[Result]) extends Command
 
+  case class SetBatch(responeActor:ActorRef[Result],pairs: List[(Seq[Byte],Seq[Byte])]) extends Command
+
   val storeServiceKey: ServiceKey[Command] = ServiceKey[Command]("StoreService")
 
 
@@ -48,14 +50,28 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
       replyTo ! CountResult(result)
       Behaviors.same
     }
+    case SetBatch(responeActor:ActorRef[Responses.Result],pairs: List[(Seq[Byte],Seq[Byte])])=>{
+      val stringPairs = pairs.map(kv=> (kv._1.toString(),kv._2.toString()))
+      pairs.foreach(kv=>{
+        val key= kv._1
+        val value= kv._2
+        storedData.put(key, value)
+      })
+      responeActor ! Responses.SetResponseBatch(stringPairs)
+
+      Behaviors.same
+    }
 
     //Processing Set Requests
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       //Put the received value as the new one
       storedData.put(key,value)
-      val valueString = new String(value.toArray, "UTF-8")
-      val keyString = new String(key.toArray, StandardCharsets.UTF_8)
+      //val keyString = new String(key.toArray, StandardCharsets.UTF_8)
+      //val valueString = new String(value.toArray, "UTF-8")
+      val keyString=key.toString()
+      val valueString= value.toString()
       replyTo ! SetResult(keyString,valueString)
+
       Behaviors.same
     }
 

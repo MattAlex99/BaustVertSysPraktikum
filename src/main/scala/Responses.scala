@@ -8,6 +8,9 @@ object Responses {
   sealed trait Result
 
   case class SetResult(key: String, value: String) extends Result
+
+  case class SetResponseBatch(kvPairs:List[(String,String)]) extends Result
+
   case class GetResultSuccessful(key: String, value: Option[String]) extends Result
 
   case class CountResult(count:Integer) extends Result
@@ -23,9 +26,17 @@ object Responses {
 
 class Responses private (context: ActorContext[Responses.Result]) extends AbstractBehavior[Responses.Result](context) {
   import Responses._
+
+  def printSetResult(key:String,value:String): Unit ={
+    context.log.info("value of key " + key +" was set "+value)
+  }
   override def onMessage(message: Responses.Result): Behavior[Responses.Result] = message match {
+    case SetResponseBatch(kvPairs: List[(String, String)]) => {
+      kvPairs.foreach(pair=>printSetResult(pair._1,pair._2))
+      Behaviors.stopped
+    }
     case SetResult(key:String,value:String)=>{
-      context.log.info("value of key " + key +" was set "+value)
+      printSetResult(key,value)
       Behaviors.stopped
     }
     case CountResult(count:Integer) => {
