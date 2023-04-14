@@ -5,6 +5,9 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import java.io.File
 import java.util.Scanner
 import scala.annotation.tailrec
+import scala.io.Source
+import scala.io.Source.fromFile
+import scala.util.Using
 object FileReader {
   sealed trait Message
   case class File(filename: String, client: ActorRef[Client.Command]) extends Message
@@ -34,17 +37,28 @@ class FileReader (context: ActorContext[FileReader.Message])
   override def onMessage(message: Message): Behavior[Message] = message match {
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       context.log.info("Reading Files by Line")
+      Using(Source.fromFile(filename)){ reader =>
+        reader.getLines()
+          .map(line => (line.split(",")(0), line.split(",")(1)))
+          .grouped(50).buffered
+          .foreach(batch =>client ! Client.Set(batch.toList) )
+      }.get
+      //val lines = fromFile(filename)
+      //  .getLines()
+      //  .map(line => (line.split(",")(0),line.split(",")(1)))
+      //  .grouped(50)
+      //lines.foreach(batch => client ! Client.Set(batch.toList))
+
       //Prepare a scanner to read line by line
-      val file = new File(filename)
-      val reader = new Scanner(file)
-      while (reader.hasNextLine) {
-        //Process every read line
-        val currentBatch= getNextBatch(0,batch_size,List[(String,String)](),reader)
-        //println("batch",currentBatch)
-        client ! Client.Set(currentBatch)
-      }
-      Thread.sleep(12000)
-      context.log.info("sending count request")
+      //val file = new File(filename)
+      //val reader = new Scanner(file)
+      //while (reader.hasNextLine) {
+      //  //Process every read line
+      //  val currentBatch= getNextBatch(0,batch_size,List[(String,String)](),reader)
+      //  client ! Client.Set(currentBatch)
+      //}
+      //Thread.sleep(12000)
+      //context.log.info("sending count request")
       client ! Client.Count()
       Behaviors.stopped
     }
