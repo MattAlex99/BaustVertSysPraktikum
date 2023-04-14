@@ -16,7 +16,7 @@ object Client {
   case class Set(currentBatch:List[(String,String)]) extends Command
   case class Count() extends Command
 
-  private case class ListingResponse(listing: Receptionist.Listing) extends Command //TODO ggf durch receptionist subscriber ersetzen
+  private case class ListingResponse(listing: Receptionist.Listing) extends Command
 
   val clientServiceKey: ServiceKey[Command] = ServiceKey[Command]("clientService")
 
@@ -31,6 +31,7 @@ object Client {
   def apply(store: ActorRef[Store.Command]): Behavior[Command] = {
     Behaviors.setup { context =>
       context.system.receptionist ! Receptionist.Register(clientServiceKey,context.self)
+      println("Creating Clients")
       new Client(context,Some(store))
     }
   }
@@ -64,8 +65,8 @@ class  Client  (context: ActorContext[Client.Command], connectedStore:Option[Act
     case ListingResponse(listing) => {
       //spawn one reader and make it send messages to every client
       val stores = listing.serviceInstances(Store.storeServiceKey)
-      print("creating Clients")
       stores.foreach(store => context.spawnAnonymous(Client(store)))
+
       Behaviors.same
     }
     case _ => {

@@ -9,10 +9,14 @@ object FileReader {
   sealed trait Message
   case class File(filename: String, client: ActorRef[Client.Command]) extends Message
   val serviceKey: ServiceKey[Message] = ServiceKey[Message]("clientService")
+  private case class ListingResponse(listing: Receptionist.Listing) extends Message
 
   def apply(): Behavior[Message] = {
     Behaviors.setup { context =>
+      print("creating Filereader")
       context.system.receptionist ! Receptionist.Register(serviceKey,context.self)
+      val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
+      context.system.receptionist ! Receptionist.Subscribe(Client.clientServiceKey, listingResponseAdapter)
       new FileReader(context)
     }
   }
@@ -24,6 +28,7 @@ class FileReader (context: ActorContext[FileReader.Message])
 
   //import FileReader._
   import FileReader.Message
+  import FileReader.ListingResponse
   import Client._
   val batch_size=4000
   override def onMessage(message: Message): Behavior[Message] = message match {
@@ -42,6 +47,19 @@ class FileReader (context: ActorContext[FileReader.Message])
       context.log.info("sending count request")
       client ! Client.Count()
       Behaviors.stopped
+    }
+    case ListingResponse(listing) => {
+      //spawn one reader and make it send messages to every client
+      val clients = listing.serviceInstances(Client.clientServiceKey)
+      clients.size match {
+        case 0 =>
+        case _  =>
+          println("Starting Reading Process")
+          clients.foreach(client => println(client))
+          clients.foreach(client => context.self ! FileReader.File("./trip_data_100.csv", client))
+      }
+
+      Behaviors.same
     }
     case _ => {
       context.log.info("Unexpected Message received")

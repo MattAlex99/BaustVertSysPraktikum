@@ -20,21 +20,23 @@ object Guard {
       val inputValue= scala.io.StdIn.readLine()
 
       inputValue match {
-        case "1" => context.spawnAnonymous(Store())
+        case "1" => context.spawn(Store(),"initialStore")
         //case "2" => context.spawnAnonymous(ClientStarter("clientBatch1_"))
-        case "2" => context.spawnAnonymous(Client())
-        case "3" => context.spawnAnonymous(FileReaderStarter("FileReader1_"))
+        case "2" => context.spawn(Client(),"initialClient")
+        //case "3" => context.spawnAnonymous(FileReaderStarter("FileReader1_"))
+        case "3" => context.spawn(FileReader(),"initialFilereader")
         case "all" =>
-         context.spawnAnonymous(FileReaderStarter("FileReader1_"))
-         context.spawnAnonymous(ClientStarter("clientBatch1_"))
-          context.spawnAnonymous(Store())
+          context.spawn(Store(),"initialStore")
+          context.spawn(Client(),"initialClient")
+          context.spawn(FileReader(),"initialFilereader")
+          //context.spawnAnonymous(FileReaderStarter("FileReader1_"))
         case _ => println("fehlerhafte eingabe ")
       }
 
 
-      context.system.receptionist ! Receptionist.Subscribe(Client.clientServiceKey, context.self)
-      context.system.receptionist ! Receptionist.Subscribe(Store.storeServiceKey, context.self)
-      context.system.receptionist ! Receptionist.Subscribe(FileReader.serviceKey, context.self)
+      //context.system.receptionist ! Receptionist.Subscribe(Client.clientServiceKey, context.self)
+      //context.system.receptionist ! Receptionist.Subscribe(Store.storeServiceKey, context.self)
+      //context.system.receptionist ! Receptionist.Subscribe(FileReader.serviceKey, context.self)
 
       Behaviors.same
   }

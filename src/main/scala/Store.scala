@@ -17,6 +17,7 @@ object Store{
   def apply(): Behavior[Command] = {
     Behaviors.setup { context =>
       context.system.receptionist ! Receptionist.Register(Store.storeServiceKey, context.self)
+      println("Creating Store")
       new Store(context)
     }
   }
