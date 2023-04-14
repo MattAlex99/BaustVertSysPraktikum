@@ -31,11 +31,11 @@ class  FileReaderStarter  (context: ActorContext[FileReaderStarter.Command],name
     case ListingResponse(listing)=>{
       //spawn one reader and make it send messages to every client
       val clients = listing.serviceInstances(Client.clientServiceKey)
-      val reader =context.spawn(FileReader(),namePrefix+Integer.toString(Random.nextInt(10)))
+      val reader =context.spawn(FileReader(),namePrefix+Integer.toString(Random.nextInt(100000000)))
 
-      clients.foreach(client => reader ! FileReader.File("./trip_data_100.csv", client))
-      Behaviors.same //TODO rausfinden warum ich hier nicht beenden kann
-
+      clients.foreach(client => reader ! FileReader.File("../trip_data_1000_000.csv", client))
+      //TODO diese abhängigkeit hier raus bekommen.
+      Behaviors.same
     }
 
 

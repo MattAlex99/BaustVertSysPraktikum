@@ -21,12 +21,14 @@ object Guard {
 
       inputValue match {
         case "1" => context.spawnAnonymous(Store())
-        case "2" => context.spawnAnonymous(ClientStarter("clientBatch1_"))
+        //case "2" => context.spawnAnonymous(ClientStarter("clientBatch1_"))
+        case "2" => context.spawnAnonymous(Client())
         case "3" => context.spawnAnonymous(FileReaderStarter("FileReader1_"))
         case "all" =>
          context.spawnAnonymous(FileReaderStarter("FileReader1_"))
          context.spawnAnonymous(ClientStarter("clientBatch1_"))
           context.spawnAnonymous(Store())
+        case _ => println("fehlerhafte eingabe ")
       }
 
 

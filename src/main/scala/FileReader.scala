@@ -25,7 +25,7 @@ class FileReader (context: ActorContext[FileReader.Message])
   //import FileReader._
   import FileReader.Message
   import Client._
-  val batch_size=50
+  val batch_size=4000
   override def onMessage(message: Message): Behavior[Message] = message match {
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       context.log.info("Reading Files by Line")
@@ -35,9 +35,12 @@ class FileReader (context: ActorContext[FileReader.Message])
       while (reader.hasNextLine) {
         //Process every read line
         val currentBatch= getNextBatch(0,batch_size,List[(String,String)](),reader)
-        println("batch",currentBatch)
+        //println("batch",currentBatch)
         client ! Client.Set(currentBatch)
       }
+      Thread.sleep(12000)
+      context.log.info("sending count request")
+      client ! Client.Count()
       Behaviors.stopped
     }
     case _ => {
@@ -50,6 +53,8 @@ class FileReader (context: ActorContext[FileReader.Message])
   @tailrec
   final def getNextBatch(currentCount: Integer, batchSize: Integer, currentValues: List[(String,String)], scanner: Scanner): List[(String,String)] = {
     //TODO ersetzen mit den batch read
+    // file reader ist fromFile
+    // batch lesen mit
     if (scanner.hasNextLine) {
       if (currentCount == batchSize)
         return currentValues

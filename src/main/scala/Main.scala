@@ -11,7 +11,7 @@ import java.time.InstantSource.system // immer darauf achten, dass "typed" drans
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val configuration = Utils.createConfiguration(args(0).toInt  )
+    val configuration = Utils.createConfiguration(args(0).toInt)
     val guard = ActorSystem(Guard(), "hfu", configuration)
   }
 

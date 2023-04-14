@@ -32,9 +32,10 @@ class  ClientStarter  (context: ActorContext[ClientStarter.Command],namePrefix:S
 
     case ListingResponse(listing)=>{
       //spawns one Client for every store that exists and ends actor
+
       val stores = listing.serviceInstances(Store.storeServiceKey)
       stores.foreach(store => context.spawn(Client(store),namePrefix+Integer.toString(Random.nextInt(13))))
-      Behaviors.same //TODO rausfinden warum ich hier nicht beenden kann
+      Behaviors.same
   }
 
 }
