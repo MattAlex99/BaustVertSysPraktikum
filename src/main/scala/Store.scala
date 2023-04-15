@@ -51,7 +51,14 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
       Behaviors.same
     }
     case SetBatch(responeActor:ActorRef[Responses.Result],pairs: List[(Seq[Byte],Seq[Byte])])=>{
-      val stringPairs = pairs.map(kv=> (kv._1.toString(),kv._2.toString()))
+      //val b = new String(pairs.head._1.map(_.toByte).toArray)
+      //print(b)
+      //Werte kommen hier als int an, obwohl sie byte sein sollten. deshalb das rumbecaste
+      //val a =new String(pairs.head._1.map(_.toChar).toString())
+      //print(a)
+      ////TODO hier dafür sorgen,dass ein richtiger String rauskommt
+      //val stringPairs = pairs.map(kv=> (kv._1.toArray.mkString("Array(", ", ", ")"),kv._1.toArray.toString))
+      val stringPairs = pairs.map(kv=> (custonByteToString(kv._1),custonByteToString(kv._2)))
       pairs.foreach(kv=>{
         val key= kv._1
         val value= kv._2
@@ -82,7 +89,10 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
   }
 
 
-
+  def custonByteToString(input:Seq[Byte]):String= {
+    //wenn ich nur .toString aufrufe kommt "Array(Int,Int,Int)" raus. das
+    return input.mkString(",").split(",").map(value=>value.toInt.toChar).mkString
+  }
 
 }
 
