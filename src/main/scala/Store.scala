@@ -30,7 +30,6 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
   import Store._
   override def onMessage(message: Command): Behavior[Command] = message match {
 
-
     //Processing Get requests
     case Get(replyTo: ActorRef[Result], key: Seq[Byte]) => {
       //get the string from the map and create a option [String] Object
@@ -50,35 +49,24 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
       replyTo ! CountResult(result)
       Behaviors.same
     }
+
     case SetBatch(responeActor:ActorRef[Responses.Result],pairs: List[(Seq[Byte],Seq[Byte])])=>{
-      //val b = new String(pairs.head._1.map(_.toByte).toArray)
-      //print(b)
-      //Werte kommen hier als int an, obwohl sie byte sein sollten. deshalb das rumbecaste
-      //val a =new String(pairs.head._1.map(_.toChar).toString())
-      //print(a)
-      ////TODO hier dafür sorgen,dass ein richtiger String rauskommt
-      //val stringPairs = pairs.map(kv=> (kv._1.toArray.mkString("Array(", ", ", ")"),kv._1.toArray.toString))
-      val stringPairs = pairs.map(kv=> (custonByteToString(kv._1),custonByteToString(kv._2)))
       pairs.foreach(kv=>{
         val key= kv._1
         val value= kv._2
         storedData.put(key, value)
       })
+      val stringPairs = pairs.map(kv=> (custonByteToString(kv._1),custonByteToString(kv._2)))
       responeActor ! Responses.SetResponseBatch(stringPairs)
-
       Behaviors.same
     }
 
-    //Processing Set Requests
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       //Put the received value as the new one
       storedData.put(key,value)
-      //val keyString = new String(key.toArray, StandardCharsets.UTF_8)
-      //val valueString = new String(value.toArray, "UTF-8")
       val keyString=key.toString()
       val valueString= value.toString()
       replyTo ! SetResult(keyString,valueString)
-
       Behaviors.same
     }
 
@@ -90,8 +78,8 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
 
 
   def custonByteToString(input:Seq[Byte]):String= {
-    //wenn ich nur .toString aufrufe kommt "Array(Int,Int,Int)" raus. das
-    return input.mkString(",").split(",").map(value=>value.toInt.toChar).mkString
+    //Jackson deserialisiert als Seq[Int] ansetelle Seq[Byte], diese Funktion setzt notwendige casts um
+    return new String(input.asInstanceOf[List[Int]].map(_.toByte).toArray, StandardCharsets.UTF_8)
   }
 
 }

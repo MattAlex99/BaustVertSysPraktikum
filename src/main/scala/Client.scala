@@ -1,21 +1,9 @@
 
-import Client.ListingResponse
-import FileReaderStarter.{ListingResponse, serviceKey}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, MailboxSelector}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.util.LineNumbers.Result
-import Store._
-import akka.NotUsed
+
 import akka.actor.typed.receptionist.Receptionist
 import akka.actor.typed.receptionist.ServiceKey
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.ReceiveTimeout
-import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
-
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
 object Client {
@@ -23,8 +11,6 @@ object Client {
   sealed trait Command
   case class Get(key:String) extends Command
   case class Set(currentBatch:List[(String,String)]) extends Command
-  //case class Set(currentBatch:List[String]) extends Command
-
   case class Count() extends Command
 
   private case class ListingResponse(listing: Receptionist.Listing) extends Command
@@ -51,7 +37,6 @@ object Client {
 
 class  Client  (context: ActorContext[Client.Command], connectedStore:Option[ActorRef[Store.Command]])extends AbstractBehavior[Client.Command](context) {
   import Client._
-  implicit val timeout = Timeout(5 seconds)
   override def onMessage(message: Command): Behavior[Command] = message match {
     case Get(key: String) => {
       val responseActor=context.spawnAnonymous(Responses())
@@ -59,33 +44,30 @@ class  Client  (context: ActorContext[Client.Command], connectedStore:Option[Act
       store ! Store.Get(responseActor,key.getBytes())
       Behaviors.same
     }
+
     case Count() => {
       val responseActor = context.spawnAnonymous(Responses())
       val store = connectedStore.get
       store ! Store.Count(responseActor)
       Behaviors.same
     }
+
     case Set(currentBatch) => {
       //hier ganzes batch senden
       val store = connectedStore.get
       val sendBatch= currentBatch.map(entry=> (entry._1.getBytes().toSeq,entry._2.getBytes().toSeq))
       store ! Store.SetBatch(context.spawnAnonymous(Responses()),sendBatch)
-      //currentBatch.foreach(entry=>
-      //  store ! Store.Set(context.spawnAnonymous(Responses()), entry._1.getBytes(),entry._2.getBytes())
-      //)
-
       Behaviors.same
     }
+
     case ListingResponse(listing) => {
       //spawn one reader and make it send messages to every client
       val stores = listing.serviceInstances(Store.storeServiceKey)
       val props = MailboxSelector.fromConfig("")
-      print("p:",props)
-
       stores.foreach(store => context.spawnAnonymous(Client(store),props))
-
       Behaviors.same
     }
+
     case _ => {
       context.log.info("Faulty Message (to Client)")
       context.log.info(message.toString)

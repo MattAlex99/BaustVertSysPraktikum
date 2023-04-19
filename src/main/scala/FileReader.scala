@@ -26,12 +26,24 @@ object FileReader {
 class FileReader (context: ActorContext[FileReader.Message])
   extends AbstractBehavior[FileReader.Message](context) {
 
-  //import FileReader._
   import FileReader.Message
   import FileReader.ListingResponse
   import Client._
   val batch_size=2000
   override def onMessage(message: Message): Behavior[Message] = message match {
+
+    case ListingResponse(listing) => {
+      //spawn one reader and make it send messages to every client
+      val clients = listing.serviceInstances(Client.clientServiceKey)
+      clients.size match {
+        case 0 =>
+        case _ =>
+          println("Starting Reading Process")
+          clients.foreach(client => context.self ! FileReader.File("../trip_data_1000_000.csv", client))
+      }
+      Behaviors.same
+    }
+
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       context.log.info("Reading Files by Line")
       Using(Source.fromFile(filename)){ reader =>
@@ -40,35 +52,15 @@ class FileReader (context: ActorContext[FileReader.Message])
           .grouped(batch_size)
           .buffered
           .foreach(batch =>  client ! Client.Set(batch.toList))
-        //.foreach(batch =>client ! Client.Set(batch.toList))
-      }.get
-      println("press enter to get the count")
-      scala.io.StdIn.readLine()
+      }
+      
       client ! Client.Count()
       Behaviors.same
     }
-    case ListingResponse(listing) => {
-      //spawn one reader and make it send messages to every client
-      val clients = listing.serviceInstances(Client.clientServiceKey)
-      clients.size match {
-        case 0 =>
-        case _  =>
-          println("Starting Reading Process")
-          clients.foreach(client => context.self ! FileReader.File("../trip_data_1000_000.csv", client))
-      }
 
-      Behaviors.same
-    }
     case _ => {
       context.log.info("Unexpected Message received")
       Behaviors.stopped
-
     }
   }
-
-    def SetAndWait(client:ActorRef[Command],batch:Seq[(String,String)]): Unit ={
-      client ! Client.Set(batch.toList)
-      //Thread.sleep(150)
-    }
-
 }

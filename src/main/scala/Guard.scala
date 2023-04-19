@@ -20,23 +20,16 @@ object Guard {
       val inputValue= scala.io.StdIn.readLine()
 
       inputValue match {
-        case "1" =>
-          val configuration = Utils.createConfiguration(25251)
-          //case "2" => context.spawnAnonymous(ClientStarter("clientBatch1_"))
+        case "1" =>context.spawn(Store(),"initialStore")
         case "2" => context.spawn(Client(),"initialClient")
-        //case "3" => context.spawnAnonymous(FileReaderStarter("FileReader1_"))
         case "3" => context.spawn(FileReader(),"initialFilereader")
         case "4" =>
-          //context.spawnAnonymous(Client())
-          //context.spawnAnonymous(Store())
-          //context.spawnAnonymous(FileReader())
           val configuration1 = Utils.createConfiguration(25251)
           ActorSystem(Client(), "hfu", configuration1)
           val configuration2 = Utils.createConfiguration(25252)
           ActorSystem(Store(), "hfu", configuration2)
           val configuration3 = Utils.createConfiguration(25253)
           ActorSystem(FileReader(), "hfu", configuration3)
-
         case _ => println("fehlerhafte eingabe ")
       }
 
