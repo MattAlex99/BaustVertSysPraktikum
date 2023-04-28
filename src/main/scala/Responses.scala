@@ -7,11 +7,11 @@ import java.nio.charset.StandardCharsets
 object Responses {
   sealed trait Result
 
-  case class SetResult(key: String, value: String) extends Result
+  case class SetResult(key: Seq[Byte], value: Seq[Byte]) extends Result
 
   case class SetResponseBatch(kvPairs:List[(String,String)]) extends Result
 
-  case class GetResultSuccessful(key: String, value: Option[String]) extends Result
+  case class GetResultSuccessful(key: Seq[Byte], value: Option[Seq[Byte]]) extends Result
 
   case class CountResult(count:Integer) extends Result
 
@@ -30,26 +30,29 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
   def printSetResult(key:String,value:String): Unit ={
     context.log.info("value of key " + key +" was set "+value)
   }
+
   override def onMessage(message: Responses.Result): Behavior[Responses.Result] = message match {
     case SetResponseBatch(kvPairs: List[(String, String)]) => {
       kvPairs.foreach(pair=>printSetResult(pair._1,pair._2))
       Behaviors.stopped
     }
-    case SetResult(key:String,value:String)=>{
-      printSetResult(key,value)
-      Behaviors.stopped
+    case SetResult(key:Seq[Byte],value:Seq[Byte])=>{
+      printSetResult(key.toString(),value.toString())
+      Behaviors.same
+      //TODO Protokolle so anpassen, dass sich aktoren selber beenden
+      //Behaviors.stopped
     }
     case CountResult(count:Integer) => {
       context.log.info("total number of stored keys is "+ count.toString )
       Behaviors.stopped
     }
 
-    case GetResultSuccessful(key: String, value: Option[String]) => {
+    case GetResultSuccessful(key: Seq[Byte], value: Option[Seq[Byte]]) => {
       value match {
         case None =>
-          context.log.info("value of key " + key + " not found")
+          context.log.info("value of key " + key.toList.toString() + " not found")
         case Some(containedValue) =>
-          context.log.info("value of key " + key + " is " + containedValue)      }
+          context.log.info("value of key " + new String(key.toArray, "UTF-8") + " is " + new String(containedValue.toArray, "UTF-8"))      }
       Behaviors.stopped
     }
     case _ => {

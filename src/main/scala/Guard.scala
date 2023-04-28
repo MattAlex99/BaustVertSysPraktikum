@@ -25,11 +25,43 @@ object Guard {
         case "3" => context.spawn(FileReader(),"initialFilereader")
         case "4" =>
           val configuration1 = Utils.createConfiguration(25251)
-          ActorSystem(Client(), "hfu", configuration1)
+          val ClientSystem=ActorSystem(Client(), "hfu", configuration1)
+          MinimalShard.initSharding(ClientSystem)
+
+          //context.spawn(StoreShard("1"),"shard_1")
+          //context.spawn(StoreShard("2"),"shard_2")
+          //context.spawn(StoreShard("3"),"shard_3")
+          //context.spawn(StoreShard("4"),"shard_4")
+          context.spawnAnonymous(MinimalShard("0"))
+          //context.spawnAnonymous(MinimalShard("1"))
+          //context.spawnAnonymous(MinimalShard("2"))
+          //context.spawnAnonymous(MinimalShard("3"))
+          MinimalShard.initSharding(context.system)
+
           val configuration2 = Utils.createConfiguration(25252)
-          ActorSystem(Store(), "hfu", configuration2)
+          val storeSystem=ActorSystem(Store(), "hfu", configuration2)
+          MinimalShard.initSharding(storeSystem)
+
           val configuration3 = Utils.createConfiguration(25253)
-          ActorSystem(FileReader(), "hfu", configuration3)
+          val fileReaderSystem = ActorSystem(FileReader(), "hfu", configuration3)
+          MinimalShard.initSharding(fileReaderSystem)
+
+        case "5" =>
+          //StoreShard.initSharding(context.system)
+          MinimalShard.initSharding(context.system)
+          context.spawnAnonymous(MinimalShard("0"))
+          context.spawnAnonymous(MinimalShard("1"))
+          context.spawnAnonymous(MinimalShard("2"))
+          context.spawnAnonymous(MinimalShard("3"))
+          context.spawnAnonymous(Store())
+          context.spawnAnonymous(Client())
+          context.spawnAnonymous(FileReader())
+
+
+        //context.spawn(StoreShard("1"), "shard_1")
+          //context.spawn(StoreShard("2"), "shard_2")
+          //context.spawn(StoreShard("3"), "shard_3")
+          //context.spawn(StoreShard("0"), "shard_0")
         case _ => println("fehlerhafte eingabe ")
       }
 

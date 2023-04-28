@@ -63,8 +63,8 @@ class  Client  (context: ActorContext[Client.Command], connectedStore:Option[Act
     case ListingResponse(listing) => {
       //spawn one reader and make it send messages to every client
       val stores = listing.serviceInstances(Store.storeServiceKey)
-      val props = MailboxSelector.fromConfig("")
-      stores.foreach(store => context.spawnAnonymous(Client(store),props))
+      //val props = MailboxSelector.fromConfig("")
+      stores.foreach(store => context.spawnAnonymous(Client(store)))
       Behaviors.same
     }
 
