@@ -31,13 +31,18 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
     context.log.info("value of key " + key +" was set "+value)
   }
 
+  def printSetResult(key: Seq[Byte], value: Seq[Byte]): Unit = {
+    //TODO hier weiter implementiern (dafür sorgen, das print richtig funktioniert)
+    context.log.info("value of key " + custonByteToString(key) + " was set " +custonByteToString(value) )
+  }
+
   override def onMessage(message: Responses.Result): Behavior[Responses.Result] = message match {
     case SetResponseBatch(kvPairs: List[(String, String)]) => {
       kvPairs.foreach(pair=>printSetResult(pair._1,pair._2))
       Behaviors.stopped
     }
     case SetResult(key:Seq[Byte],value:Seq[Byte])=>{
-      printSetResult(key.toString(),value.toString())
+      printSetResult(key,value)
       Behaviors.same
       //TODO Protokolle so anpassen, dass sich aktoren selber beenden
       //Behaviors.stopped
@@ -52,7 +57,9 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
         case None =>
           context.log.info("value of key " + key.toList.toString() + " not found")
         case Some(containedValue) =>
-          context.log.info("value of key " + new String(key.toArray, "UTF-8") + " is " + new String(containedValue.toArray, "UTF-8"))      }
+          printSetResult(key,containedValue)
+          //context.log.info("value of key " + new String(key.toArray, "UTF-8") + " is " + new String(containedValue.toArray, "UTF-8"))
+          }
       Behaviors.stopped
     }
     case _ => {
@@ -60,6 +67,10 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
       context.log.info("Faulty Message (to Responses)")
       Behaviors.stopped
     }
+  }
+
+  def custonByteToString(input: Seq[Byte]): String = {
+    return new String(input.asInstanceOf[List[Int]].map(_.toByte).toArray, StandardCharsets.UTF_8)
   }
 }
 

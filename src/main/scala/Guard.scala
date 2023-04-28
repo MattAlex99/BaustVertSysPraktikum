@@ -32,7 +32,7 @@ object Guard {
           //context.spawn(StoreShard("2"),"shard_2")
           //context.spawn(StoreShard("3"),"shard_3")
           //context.spawn(StoreShard("4"),"shard_4")
-          context.spawnAnonymous(MinimalShard("0"))
+          //context.spawnAnonymous(MinimalShard("0"))
           //context.spawnAnonymous(MinimalShard("1"))
           //context.spawnAnonymous(MinimalShard("2"))
           //context.spawnAnonymous(MinimalShard("3"))

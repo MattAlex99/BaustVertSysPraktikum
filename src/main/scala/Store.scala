@@ -74,9 +74,7 @@ class Store private (context: ActorContext[Store.Command],local_shard:ActorRef[M
         val key= kv._1
         val value= kv._2
         val shardId = getShardID(key)
-        println("geting shard with id:",shardId)
         val ref = sharding.entityRefFor(MinimalShard.TypeKey, shardId)
-        println("shard:",ref," id:",ref.entityId)
         ref ! MinimalShard.Set(responeActor, key, value)
       })
       //val stringPairs = pairs.map(kv=> (custonByteToString(kv._1),custonByteToString(kv._2)))
@@ -87,6 +85,8 @@ class Store private (context: ActorContext[Store.Command],local_shard:ActorRef[M
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       print("setting: ",key)
       val shardId = getShardID(key)
+      val ref = sharding.entityRefFor(MinimalShard.TypeKey, shardId)
+      ref ! MinimalShard.Set(replyTo, key, value)
      //val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
      //ref ! StoreShard.Set(replyTo, key,value)
 

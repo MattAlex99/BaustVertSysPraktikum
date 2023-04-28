@@ -3,6 +3,8 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import Responses.{GetResultSuccessful, Result, SetResult}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
 
+import java.nio.charset.StandardCharsets
+
 object StoreShard {
 
 
@@ -66,5 +68,7 @@ class  StoreShard  (context: ActorContext[StoreShard.Command],shard_id:String)ex
     }
 
   }
+
+
 }
 
