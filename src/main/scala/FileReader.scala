@@ -29,7 +29,7 @@ class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
   import FileReader.Message
   import FileReader.ListingResponse
   import Client._
-  val batch_size=400
+  val batch_size=500
   override def onMessage(message: Message): Behavior[Message] = message match {
 
     case ListingResponse(listing) => {

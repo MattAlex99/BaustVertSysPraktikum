@@ -23,14 +23,17 @@ object Guard {
       val inputValue= scala.io.StdIn.readLine()
 
       inputValue match {
-        case "1" =>context.spawn(Store(),"initialStore")
-                    StoreShard.initSharding(context.system)
+        case "1" =>
+          StoreShard.initSharding(context.system)
+          context.spawn(Store(),"initialStore")
 
-        case "2" => context.spawn(Client(),"initialClient")
-                 StoreShard.initSharding(context.system)
+        case "2" =>
+          StoreShard.initSharding(context.system)
+          context.spawn(Client(),"initialClient")
 
-        case "3" => context.spawn(FileReader(5000),"initialFilereader")
-                  StoreShard.initSharding(context.system)
+        case "3" =>
+          StoreShard.initSharding(context.system)
+          context.spawn(FileReader(1000000),"initialFilereader")
 
         case "4" =>
                   StoreShard.initSharding(context.system)

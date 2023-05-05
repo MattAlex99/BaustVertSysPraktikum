@@ -89,12 +89,11 @@ class ObserverAndExecutorComplete (context: ActorContext[ObserverAndExecutor.Com
   override def onMessage(msg: ObserverAndExecutor.Command): Behavior[ObserverAndExecutor.Command] = msg match {
     case StartReading() => {
       println("will tell reader to read")
-      //val replyTo = context.spawnAnonymous(ObserverAndExecutor(clientRef,readerRef))
       readerRef ! FileReader.File(filename, clientRef)
       Behaviors.same
     }
     case ExecuteTests() => {
-      println("geting values")
+      println("getting values")
       clientRef ! Client.Get("89D227B655E5C82AECF13C3F540D4CF4") //
       clientRef ! Client.Get("2BE8AF8C2AAA9791C731972187AAAE80") //
       clientRef ! Client.Get("B5B2CB8B79EBD8F8FB54CD275BCC9BB6") //
@@ -102,7 +101,7 @@ class ObserverAndExecutorComplete (context: ActorContext[ObserverAndExecutor.Com
       clientRef ! Client.Get("0B18AD7511A013CB08333F312AFDEC96") //
 
       val sharding= ClusterSharding(context.system)
-      Range.inclusive(0,10).foreach(
+      Range.inclusive(0,Store.numOfUsedShards+2).foreach(
         shardId=>{
           sharding.entityRefFor(StoreShard.TypeKey,shardId.toString) ! StoreShard.PrintInfo()
         }

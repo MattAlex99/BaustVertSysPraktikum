@@ -18,8 +18,8 @@ object StoreShard {
 
   case class PrintInfo() extends Message
 
-  //TODO Fragen, ob ich hier dieses 1 zu 1 mapping mache, ich glaube das hier ersetzt nur "with Role"
   val TypeKey: EntityTypeKey[StoreShard.Message] =EntityTypeKey[StoreShard.Message]("StoreShard")
+
   def initSharding(system: ActorSystem[_]): Unit = {
     println("initiating store shards")
     val sharding = ClusterSharding(system)
@@ -50,11 +50,10 @@ class  StoreShard(context: ActorContext[StoreShard.Message], shard_id:String)ext
       Behaviors.same
     }
     case PrintInfo()=>{
-      println("ShardStroe with ID: "+shard_id+"  has "+storedData.size+" elements in sytem: "+context.system)
+      println("ShardStore with ID: "+shard_id+"  has "+storedData.size+" stored items")
       Behaviors.same
     }
     case  SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Result])]) =>{
-      pairs.foreach(a=>print(a))
       pairs.foreach(pair=>{
         val key=pair._1
         val value=pair._2
