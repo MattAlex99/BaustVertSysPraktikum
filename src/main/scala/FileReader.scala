@@ -29,7 +29,7 @@ class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
   import FileReader.Message
   import FileReader.ListingResponse
   import Client._
-  val batch_size=100
+  val batch_size=400
   override def onMessage(message: Message): Behavior[Message] = message match {
 
     case ListingResponse(listing) => {
@@ -45,15 +45,12 @@ class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
 
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       println("Reading Files by Line")
-      var a=0
       Using(Source.fromFile(filename)){ reader =>
         reader.getLines().take(num_of_lines)
           .map(line => (line.split(",")(0), line.split(",")(1)))
           .grouped(batch_size)
           .buffered
           .foreach(batch => {
-            a=a+1
-            println("processing batch: ",a)
             client ! Client.Set(batch.toList)
 
           })

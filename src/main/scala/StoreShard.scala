@@ -14,6 +14,8 @@ object StoreShard {
   case class Get(replyTo: ActorRef[Result], key: Seq[Byte]) extends Message
   case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Message
 
+  case class SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Result])]) extends Message
+
   case class PrintInfo() extends Message
 
   //TODO Fragen, ob ich hier dieses 1 zu 1 mapping mache, ich glaube das hier ersetzt nur "with Role"
@@ -49,6 +51,17 @@ class  StoreShard(context: ActorContext[StoreShard.Message], shard_id:String)ext
     }
     case PrintInfo()=>{
       println("ShardStroe with ID: "+shard_id+"  has "+storedData.size+" elements in sytem: "+context.system)
+      Behaviors.same
+    }
+    case  SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Result])]) =>{
+      pairs.foreach(a=>print(a))
+      pairs.foreach(pair=>{
+        val key=pair._1
+        val value=pair._2
+        val replyTo = pair._3
+        storedData.put(key, value)
+        replyTo ! SetResult(key, value)
+        })
       Behaviors.same
     }
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {

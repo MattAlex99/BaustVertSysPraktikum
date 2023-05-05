@@ -60,19 +60,28 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
     }
 
     case SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Responses.Result])])=>{
-      pairs.foreach(kv=>{
-        val key= kv._1
-        val value= kv._2
-        val responeActor = kv._3
-        val shardId = getShardID(key)
-        val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
-        ref ! StoreShard.Set(responeActor, key, value)
+      ////seperate batch into multiple batches, one for each shard
+      val shard_batches =pairs.groupBy(entry=>getShardID(entry._1))
+      //send each batch to its respective shard
+      shard_batches.foreach(entry=>{
+        val shardId=entry._1
+        val batch =entry._2
+        val shardRef = sharding.entityRefFor(StoreShard.TypeKey, shardId)
+        shardRef ! StoreShard.SetBatch(batch)
       })
+      //old way without store shard batches
+      //pairs.foreach(kv=>{
+      //  val key= kv._1
+      //  val value= kv._2
+      //  val responeActor = kv._3
+      //  val shardId = getShardID(key)
+      //  val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
+      //  ref ! StoreShard.Set(responeActor, key, value)
+      //})
       Behaviors.same
     }
 
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
-      print("setting: ",key)
       val shardId = getShardID(key)
       val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
       ref ! StoreShard.Set(replyTo, key, value)
@@ -90,6 +99,8 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
     //Jackson deserialisiert als Seq[Int] ansetelle Seq[Byte], diese Funktion setzt notwendige casts um
     return new String(input.asInstanceOf[List[Int]].map(_.toByte).toArray, StandardCharsets.UTF_8)
   }
+
+
 
 }
 

@@ -48,7 +48,7 @@ object Guard {
           StoreShard.initSharding(storeSystem)
 
           val configuration3 = Utils.createConfiguration(25253)
-          val fileReaderSystem = ActorSystem(FileReader(5000), "hfu", configuration3)
+          val fileReaderSystem = ActorSystem(FileReader(1000000), "hfu", configuration3)
           StoreShard.initSharding(fileReaderSystem)
 
           println("press enter to execute tests")
