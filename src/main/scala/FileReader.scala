@@ -11,26 +11,25 @@ object FileReader {
   val serviceKey: ServiceKey[Message] = ServiceKey[Message]("fileReader")
   private case class ListingResponse(listing: Receptionist.Listing) extends Message
 
-  def apply(): Behavior[Message] = {
+  def apply(num_of_lines:Int): Behavior[Message] = {
     Behaviors.setup { context =>
       print("creating Filereader")
       context.system.receptionist ! Receptionist.Register(serviceKey,context.self)
       val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
       context.system.receptionist ! Receptionist.Subscribe(Client.clientServiceKey, listingResponseAdapter)
-      new FileReader(context)
+      new FileReader(context,num_of_lines)
     }
   }
 }
 
 
-class FileReader (context: ActorContext[FileReader.Message])
+class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
   extends AbstractBehavior[FileReader.Message](context) {
 
   import FileReader.Message
   import FileReader.ListingResponse
   import Client._
-  val batch_size=500
-  val num_of_lines=50
+  val batch_size=100
   override def onMessage(message: Message): Behavior[Message] = message match {
 
     case ListingResponse(listing) => {
@@ -39,25 +38,27 @@ class FileReader (context: ActorContext[FileReader.Message])
       clients.size match {
         case 0 =>
         case _ =>
-          println("Starting Reading Process")
           clients.foreach(client => context.self ! FileReader.File("../trip_data_1000_000.csv", client))
       }
       Behaviors.same
     }
 
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
-      context.log.info("Reading Files by Line")
+      println("Reading Files by Line")
+      var a=0
       Using(Source.fromFile(filename)){ reader =>
         reader.getLines().take(num_of_lines)
           .map(line => (line.split(",")(0), line.split(",")(1)))
           .grouped(batch_size)
           .buffered
-          .foreach(batch =>  client ! Client.Set(batch.toList))
+          .foreach(batch => {
+            a=a+1
+            println("processing batch: ",a)
+            client ! Client.Set(batch.toList)
+
+          })
       }
 
-      //client ! Client.Count()
-      //sums up to 890 keys for 1000 entries
-      //sums up to 9244 kest for all entries
       Behaviors.same
     }
 

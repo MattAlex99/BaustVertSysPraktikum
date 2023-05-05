@@ -1,6 +1,5 @@
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import akka.util.LineNumbers.Result
 
 import java.nio.charset.StandardCharsets
 
@@ -32,7 +31,6 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
   }
 
   def printSetResult(key: Seq[Byte], value: Seq[Byte]): Unit = {
-    //TODO hier weiter implementiern (dafür sorgen, das print richtig funktioniert)
     context.log.info("value of key " + custonByteToString(key) + " was set " +custonByteToString(value) )
   }
 
@@ -43,9 +41,7 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
     }
     case SetResult(key:Seq[Byte],value:Seq[Byte])=>{
       printSetResult(key,value)
-      Behaviors.same
-      //TODO Protokolle so anpassen, dass sich aktoren selber beenden
-      //Behaviors.stopped
+      Behaviors.stopped
     }
     case CountResult(count:Integer) => {
       context.log.info("total number of stored keys is "+ count.toString )
@@ -55,10 +51,9 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
     case GetResultSuccessful(key: Seq[Byte], value: Option[Seq[Byte]]) => {
       value match {
         case None =>
-          context.log.info("value of key " + key.toList.toString() + " not found")
+          context.log.info("value of key " + custonByteToString(key) + " not found")
         case Some(containedValue) =>
-          printSetResult(key,containedValue)
-          //context.log.info("value of key " + new String(key.toArray, "UTF-8") + " is " + new String(containedValue.toArray, "UTF-8"))
+          context.log.info("value of key " + custonByteToString(key) + " is " + custonByteToString(containedValue), "UTF-8")
           }
       Behaviors.stopped
     }

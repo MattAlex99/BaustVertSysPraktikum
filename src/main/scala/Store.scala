@@ -13,7 +13,7 @@ object Store{
   case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Command
   case class Count(replyTo: ActorRef[Result]) extends Command
 
-  case class SetBatch(responeActor:ActorRef[Result],pairs: List[(Seq[Byte],Seq[Byte])]) extends Command
+  case class SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Result])]) extends Command
 
   val storeServiceKey: ServiceKey[Command] = ServiceKey[Command]("StoreService")
 
@@ -22,20 +22,20 @@ object Store{
     Behaviors.setup { context =>
 
       //MinimalShard.initSharding(context.system)
-      val local_shard=context.spawnAnonymous(MinimalShard("5"))
+      val local_shard=context.spawnAnonymous(StoreShard("5"))
       context.system.receptionist ! Receptionist.Register(Store.storeServiceKey, context.self)
       println("Creating Store")
-      new Store(context,local_shard)
+      new Store(context)
     }
   }
 }
 
-class Store private (context: ActorContext[Store.Command],local_shard:ActorRef[MinimalShard.Message])extends AbstractBehavior[Store.Command](context) {
+class Store private (context: ActorContext[Store.Command])extends AbstractBehavior[Store.Command](context) {
   val storedData: scala.collection.mutable.Map[Seq[Byte],Seq[Byte]] = scala.collection.mutable.Map.empty[Seq[Byte],Seq[Byte]]
   import Store._
   val actorSystem: ActorSystem[Nothing] =context.system
   val sharding: ClusterSharding = ClusterSharding(actorSystem)
-  val numOfUsedShards=4
+  val numOfUsedShards=10
 
   def getShardID(key:Seq[Byte]):String={
     val hash=key.hashCode()
@@ -46,19 +46,9 @@ class Store private (context: ActorContext[Store.Command],local_shard:ActorRef[M
 
     //Processing Get requests
     case Get(replyTo: ActorRef[Result], key: Seq[Byte]) => {
-      //TODO make sure program can deal with empty respones
       val shardId=getShardID(key)
-      val ref = sharding.entityRefFor(MinimalShard.TypeKey, shardId)
-      ref ! MinimalShard.Get(replyTo,key)
-
-      //get the string from the map and create a option [String] Object
-      //val value = storedData.get(key)
-      //val valueString: Option[String] = value match {
-      //  case Some(arr) => Some(new String(arr.toArray, "UTF-8"))
-      //  case None => None
-      //}
-      //val keyString=new String(key.toArray, StandardCharsets.UTF_8)
-      //replyTo ! GetResultSuccessful(keyString, valueString)
+      val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
+      ref ! StoreShard.Get(replyTo,key)
       Behaviors.same
     }
 
@@ -69,32 +59,23 @@ class Store private (context: ActorContext[Store.Command],local_shard:ActorRef[M
       Behaviors.same
     }
 
-    case SetBatch(responeActor:ActorRef[Responses.Result],pairs: List[(Seq[Byte],Seq[Byte])])=>{
+    case SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Responses.Result])])=>{
       pairs.foreach(kv=>{
         val key= kv._1
         val value= kv._2
+        val responeActor = kv._3
         val shardId = getShardID(key)
-        val ref = sharding.entityRefFor(MinimalShard.TypeKey, shardId)
-        ref ! MinimalShard.Set(responeActor, key, value)
+        val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
+        ref ! StoreShard.Set(responeActor, key, value)
       })
-      //val stringPairs = pairs.map(kv=> (custonByteToString(kv._1),custonByteToString(kv._2)))
-      //responeActor ! Responses.SetResponseBatch(stringPairs)
       Behaviors.same
     }
 
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       print("setting: ",key)
       val shardId = getShardID(key)
-      val ref = sharding.entityRefFor(MinimalShard.TypeKey, shardId)
-      ref ! MinimalShard.Set(replyTo, key, value)
-     //val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
-     //ref ! StoreShard.Set(replyTo, key,value)
-
-      ////Put the received value as the new one
-      //storedData.put(key,value)
-      //val keyString=key.toString()
-      //val valueString= value.toString()
-      //replyTo ! SetResult(keyString,valueString)
+      val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
+      ref ! StoreShard.Set(replyTo, key, value)
       Behaviors.same
     }
 

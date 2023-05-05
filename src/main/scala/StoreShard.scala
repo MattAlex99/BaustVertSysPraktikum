@@ -1,63 +1,60 @@
+import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
+import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import Responses.{GetResultSuccessful, Result, SetResult}
+import Responses.Result
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
 
-import java.nio.charset.StandardCharsets
+import scala.io.Source
+import scala.util.Using
 
 object StoreShard {
+  sealed trait Message
 
+  case class Get(replyTo: ActorRef[Result], key: Seq[Byte]) extends Message
+  case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Message
 
-  sealed trait Command
-  case class Get(replyTo: ActorRef[Result], key: Seq[Byte]) extends Command
-  case class Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) extends Command
+  case class PrintInfo() extends Message
 
- // val TypeKey: EntityTypeKey[StoreShard.Command] =
- //   EntityTypeKey[StoreShard.Command]("StoreShard")
-
+  //TODO Fragen, ob ich hier dieses 1 zu 1 mapping mache, ich glaube das hier ersetzt nur "with Role"
+  val TypeKey: EntityTypeKey[StoreShard.Message] =EntityTypeKey[StoreShard.Message]("StoreShard")
   def initSharding(system: ActorSystem[_]): Unit = {
     println("initiating store shards")
-    //only starts new weather station, if no entity with cntityContext.entityID exists
-    //entity content is passed as argument in "sharding.entityRefFor(...)"
     val sharding = ClusterSharding(system)
-
-    //doku
-    //sharding.init(
-    //  Entity(TypeKey)(createBehavior = entityContext =>
-    //    StoreShard(entityContext.entityId)).withRole("StoreShard"))
-//
-    ////kill weathr
-    //ClusterSharding(system).init(Entity(TypeKey) { entityContext =>
-    //  StoreShard(entityContext.entityId)
-    //})
+    sharding.init(Entity(TypeKey) { entityContext =>
+      StoreShard(entityContext.entityId)
+    })
   }
 
-  def apply(shard_id:String): Behavior[StoreShard.Command] =
+  def apply(shard_id:String): Behavior[Message] = {
     Behaviors.setup { context =>
-      println("creating store shard, with id:", shard_id)
-    return new StoreShard(context,shard_id)
+      println("creating StoreShard with id: ", shard_id)
+      new StoreShard(context,shard_id)
     }
-
+  }
 }
 
-
-class  StoreShard  (context: ActorContext[StoreShard.Command],shard_id:String)extends AbstractBehavior[StoreShard.Command](context) {
+class  StoreShard(context: ActorContext[StoreShard.Message], shard_id:String)extends AbstractBehavior[StoreShard.Message](context) {
   import StoreShard._
+  import Responses.SetResult
+  import Responses.GetResultSuccessful
   val storedData: scala.collection.mutable.Map[Seq[Byte],Seq[Byte]] = scala.collection.mutable.Map.empty[Seq[Byte],Seq[Byte]]
 
-  override def onMessage(message: Command): Behavior[Command] = message match {
+  override def onMessage(message: Message): Behavior[Message] = message match {
     case Get(replyTo: ActorRef[Result], key: Seq[Byte]) => {
       //get the string from the map and create a option [String] Object
       val value = storedData.get(key)
       replyTo ! GetResultSuccessful(key, value)
       Behaviors.same
     }
-
+    case PrintInfo()=>{
+      println("ShardStroe with ID: "+shard_id+"  has "+storedData.size+" elements in sytem: "+context.system)
+      Behaviors.same
+    }
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       //hier ganzes batch senden
-      storedData.put(key,value)
-      //val sendBatch= currentBatch.map(entry=> (entry._1.getBytes().toSeq,entry._2.getBytes().toSeq))
-      replyTo ! SetResult(key,value)
+      storedData.put(key, value)
+      replyTo ! SetResult(key, value)
       Behaviors.same
     }
 
@@ -68,7 +65,4 @@ class  StoreShard  (context: ActorContext[StoreShard.Command],shard_id:String)ex
     }
 
   }
-
-
 }
-

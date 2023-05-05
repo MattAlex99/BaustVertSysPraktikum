@@ -55,15 +55,14 @@ class  Client  (context: ActorContext[Client.Command], connectedStore:Option[Act
     case Set(currentBatch) => {
       //hier ganzes batch senden
       val store = connectedStore.get
-      val sendBatch= currentBatch.map(entry=> (entry._1.getBytes().toSeq,entry._2.getBytes().toSeq))
-      store ! Store.SetBatch(context.spawnAnonymous(Responses()),sendBatch)
+      val sendBatch= currentBatch.map(entry=> (entry._1.getBytes().toSeq,entry._2.getBytes().toSeq,context.spawnAnonymous(Responses())))
+      store ! Store.SetBatch(sendBatch)
       Behaviors.same
     }
 
     case ListingResponse(listing) => {
       //spawn one reader and make it send messages to every client
       val stores = listing.serviceInstances(Store.storeServiceKey)
-      //val props = MailboxSelector.fromConfig("")
       stores.foreach(store => context.spawnAnonymous(Client(store)))
       Behaviors.same
     }
