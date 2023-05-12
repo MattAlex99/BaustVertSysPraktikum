@@ -14,3 +14,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-cluster-typed" % "2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % "2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-serialization-jackson" %"2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster-sharding-typed" % "2.8.0"
+
+val grpcVersion="1.55.1"
+libraryDependencies += "io.grpc" % "grpc-netty" % grpcVersion
+libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % "0.11.13"

@@ -16,7 +16,7 @@ object Store{
   case class SetBatch(pairs: List[(Seq[Byte],Seq[Byte],ActorRef[Result])]) extends Command
 
   val storeServiceKey: ServiceKey[Command] = ServiceKey[Command]("StoreService")
-  val numOfUsedShards=10
+  val numOfUsedShards=30
 
   def apply(): Behavior[Command] = {
     Behaviors.setup { context =>

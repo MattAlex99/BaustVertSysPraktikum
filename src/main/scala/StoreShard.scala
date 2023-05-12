@@ -20,13 +20,16 @@ object StoreShard {
 
   val TypeKey: EntityTypeKey[StoreShard.Message] =EntityTypeKey[StoreShard.Message]("StoreShard")
 
-  def initSharding(system: ActorSystem[_]): Unit = {
+
+
+    def initSharding(system: ActorSystem[_]): Unit = {
     println("initiating store shards")
     val sharding = ClusterSharding(system)
     sharding.init(Entity(TypeKey) { entityContext =>
       StoreShard(entityContext.entityId)
     })
-  }
+
+    }
 
   def apply(shard_id:String): Behavior[Message] = {
     Behaviors.setup { context =>
