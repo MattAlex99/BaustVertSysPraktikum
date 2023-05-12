@@ -8,6 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/../../src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../../src/test/scala" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/protobuf" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../target/scala-2.13/src_managed/main" isTestSource="false" generated="true" />
       <excludeFolder url="file://$MODULE_DIR$/../../target" />
       <excludeFolder url="file://$MODULE_DIR$/../../project/target" />
     </content>
@@ -30,6 +32,7 @@
     <orderEntry type="library" name="sbt: com.github.jnr:jnr-ffi:2.2.13:jar" level="project" />
     <orderEntry type="library" name="sbt: com.github.jnr:jnr-x86asm:1.0.2:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.android:annotations:4.1.1.4:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.api.grpc:proto-google-common-protos:2.0.1:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.code.findbugs:jsr305:3.0.2:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.code.gson:gson:2.9.0:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.errorprone:error_prone_annotations:2.18.0:jar" level="project" />
@@ -40,6 +43,7 @@
     <orderEntry type="library" name="sbt: com.google.protobuf:protobuf-java:3.19.6:jar" level="project" />
     <orderEntry type="library" name="sbt: com.hierynomus:asn-one:0.6.0:jar" level="project" />
     <orderEntry type="library" name="sbt: com.thesamet.scalapb:lenses_2.13:0.11.13:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.thesamet.scalapb:scalapb-runtime-grpc_2.13:0.11.13:jar" level="project" />
     <orderEntry type="library" name="sbt: com.thesamet.scalapb:scalapb-runtime_2.13:0.11.13:jar" level="project" />
     <orderEntry type="library" name="sbt: com.thoughtworks.paranamer:paranamer:2.8:jar" level="project" />
     <orderEntry type="library" name="sbt: com.typesafe.akka:akka-actor-typed_2.13:2.8.0:jar" level="project" />
@@ -64,6 +68,9 @@
     <orderEntry type="library" name="sbt: io.grpc:grpc-context:1.55.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.grpc:grpc-core:1.55.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.grpc:grpc-netty:1.55.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.grpc:grpc-protobuf-lite:1.47.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.grpc:grpc-protobuf:1.47.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.grpc:grpc-stub:1.47.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.netty:netty-buffer:4.1.87.Final:jar" level="project" />
     <orderEntry type="library" name="sbt: io.netty:netty-codec-http2:4.1.87.Final:jar" level="project" />
     <orderEntry type="library" name="sbt: io.netty:netty-codec-http:4.1.87.Final:jar" level="project" />
