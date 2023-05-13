@@ -1,12 +1,14 @@
-package storeGRCP
-
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import io.grpc.{ManagedChannel, ManagedChannelBuilder}
 
 import java.util.logging.Logger
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
+import de.hfu.protos.messages._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+
 
 object GrcpClient {
   sealed trait Command
@@ -26,7 +28,6 @@ object GrcpClient {
 
 class  GrcpClient  (context: ActorContext[GrcpClient.Command],port:Int,host:String)extends AbstractBehavior[GrcpClient.Command](context) {
   import GrcpClient._
-  import de.hfu.protos.messages._
 
   val logger = Logger.getLogger(GrcpClient.getClass.getName)
   val channel: ManagedChannel = ManagedChannelBuilder
@@ -37,6 +38,7 @@ class  GrcpClient  (context: ActorContext[GrcpClient.Command],port:Int,host:Stri
   logger.info("opening channel on "+host+":"+port)
 
   def print_set_reply(response:Try[SetReply])={
+    logger.info("may have recived a response:")
     response match {
       case Success(succ_response) => logger.info("recieved response " + succ_response)
       case Failure(exception: Exception) => exception.printStackTrace()
@@ -49,7 +51,7 @@ class  GrcpClient  (context: ActorContext[GrcpClient.Command],port:Int,host:Stri
     }
 
     case Set(key:String,value:String) => {
-      val asynch_request = SetRequest("my asynch GrpC")
+      val asynch_request = SetRequest(key,value)
       logger.info("try to set key " + key + "to value "+ value)
       try {
         val reply = GrpcClientGrpc
@@ -71,3 +73,5 @@ class  GrcpClient  (context: ActorContext[GrcpClient.Command],port:Int,host:Stri
 
   }
 }
+
+

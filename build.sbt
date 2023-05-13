@@ -8,8 +8,6 @@ lazy val root = (project in file("."))
   )
 
 
-
-
 Compile / PB.targets := Seq(
   scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
 )
