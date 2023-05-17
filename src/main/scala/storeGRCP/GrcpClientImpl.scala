@@ -1,18 +1,19 @@
+package storeGRCP
 
-
+import akkaStore.Responses.SetResult
+import akka.actor.typed.ActorRef
 import akka.actor.typed.scaladsl.ActorContext
-import akka.actor.typed.{ActorRef, ActorSystem}
+import akkaStore.{Responses, Utils}
 import de.hfu.protos.messages._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
-import scala.concurrent.{ExecutionContext, Future}
 
 
 class GrcpClientImpl(server:GrcpServer,serverRef:ActorRef[GrcpServer.ServerCommand], context:ActorContext[GrcpServer.ServerCommand]) extends GrpcClientGrpc.GrpcClient {
 
-  import akka.actor.typed.scaladsl.AskPattern._
   import akka.util.Timeout
 
   // asking someone requires a timeout if the timeout hits without response
@@ -67,11 +68,11 @@ class GrcpClientImpl(server:GrcpServer,serverRef:ActorRef[GrcpServer.ServerComma
   override def set(request: SetRequest): Future[SetReply] = {
     println("recieved Set Command with:")
     println("  "+request.key+" "+request.value)
-    //serverRef ! GrcpServer.Set(request.key,request.value)
+    //serverRef ! storeGRCP.GrcpServer.Set(request.key,request.value)
     //XXX
 
 
-    //val result: Future[Responses.Result] = serverRef ? (ref => GrcpServer.Set(request.key,request.value,ref))
+    //val result: Future[akkaStore.Responses.Result] = serverRef ? (ref => storeGRCP.GrcpServer.Set(request.key,request.value,ref))
     val serverResponse: Future[Responses.Result] = server.Setkv(request.key, request.value)
     val serverResponse_mapped:Future[Responses.SetResult]=serverResponse.map(a=> a.asInstanceOf[Responses.SetResult])
     println("")

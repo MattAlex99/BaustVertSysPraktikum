@@ -1,11 +1,11 @@
-import Store.Count
-import akka.NotUsed
-import akka.actor.typed.receptionist.Receptionist
-import akka.actor.typed.receptionist.Receptionist.{Listing, listing}
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, MailboxSelector}
+package akkaStore
+
+import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.receptionist.Receptionist.Listing
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.ClusterSharding.ShardCommand
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
+import storeGRCP.GrcpServer
+
+import _root_._
 
 object Guard {
   def apply(): Behavior[Listing] = Behaviors.setup[Listing] {
@@ -21,31 +21,30 @@ object Guard {
       println("   6= alle GRCP")
 
 
-
-      val inputValue= scala.io.StdIn.readLine()
+      val inputValue = scala.io.StdIn.readLine()
 
       inputValue match {
         case "1" =>
           StoreShard.initSharding(context.system)
-          context.spawn(Store(),"initialStore")
+          context.spawn(Store(), "initialStore")
 
         case "2" =>
           StoreShard.initSharding(context.system)
-          context.spawn(Client(),"initialClient")
+          context.spawn(Client(), "initialClient")
 
         case "3" =>
           StoreShard.initSharding(context.system)
-          context.spawn(FileReader(1000000),"initialFilereader")
+          context.spawn(FileReader(1000000), "initialFilereader")
 
         case "4" =>
-                  StoreShard.initSharding(context.system)
-                  context.spawnAnonymous(ObserverAndExecutor())
-        case "6"=>
+          StoreShard.initSharding(context.system)
+          //context.spawnAnonymous(ObserverAndExecutor())
+        case "6" =>
 
 
-         val configuration2 = Utils.createConfiguration(25252)
-         val storeSystem = ActorSystem(Store(), "hfu", configuration2)
-         StoreShard.initSharding(storeSystem)
+          val configuration2 = Utils.createConfiguration(25252)
+          val storeSystem = ActorSystem(Store(), "hfu", configuration2)
+          StoreShard.initSharding(storeSystem)
 
           val configuration3 = Utils.createConfiguration(25253)
           val newSystem = ActorSystem(GrcpServer(50051, "localhost"), "hfu", configuration3)
@@ -54,21 +53,21 @@ object Guard {
 
           scala.io.StdIn.readLine()
 
-          //val configuration1 = Utils.createConfiguration(25251)
-          //val clientSystem = ActorSystem(GrcpClient(50051, "localhost"), "hfu", configuration1)
-          //clientSystem ! (GrcpClient.Set("myKey", "Myvalue"))
+        //val configuration1 = Utils.createConfiguration(25251)
+        //val clientSystem = ActorSystem(storeGRCP.GrcpClient(50051, "localhost"), "hfu", configuration1)
+        //clientSystem ! (storeGRCP.GrcpClient.Set("myKey", "Myvalue"))
 
 
         case "5" =>
-                  StoreShard.initSharding(context.system)
+          StoreShard.initSharding(context.system)
 
           val configuration1 = Utils.createConfiguration(25251)
-          val ClientSystem=ActorSystem(Client(), "hfu", configuration1)
+          val ClientSystem = ActorSystem(Client(), "hfu", configuration1)
           StoreShard.initSharding(ClientSystem)
 
 
           val configuration2 = Utils.createConfiguration(25252)
-          val storeSystem=ActorSystem(Store(), "hfu", configuration2)
+          val storeSystem = ActorSystem(Store(), "hfu", configuration2)
           StoreShard.initSharding(storeSystem)
 
           val configuration3 = Utils.createConfiguration(25253)
@@ -77,7 +76,7 @@ object Guard {
 
           println("press enter to execute tests")
           Console.in.readLine()
-          context.spawnAnonymous(ObserverAndExecutor())
+          //context.spawnAnonymous(ObserverAndExecutor())
 
         case _ => println("fehlerhafte eingabe ")
       }
@@ -86,4 +85,3 @@ object Guard {
       Behaviors.same
   }
 }
-

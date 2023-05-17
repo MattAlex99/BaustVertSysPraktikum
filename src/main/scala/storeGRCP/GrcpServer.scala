@@ -1,16 +1,18 @@
+package storeGRCP
+
+import akkaStore._
 
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
+import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import akkaStore.{Responses, Store}
+import de.hfu.protos.messages.GrpcClientGrpc
 import io.grpc.ServerBuilder
 
 import java.util.logging.Logger
-import scala.concurrent.{ExecutionContext, Future}
-import de.hfu.protos
-import de.hfu.protos.messages.GrpcClientGrpc
-
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 object GrcpServer{
   sealed trait ServerCommand
@@ -22,7 +24,7 @@ object GrcpServer{
 
   def apply(port: Int, host: String): Behavior[ServerCommand] =
     Behaviors.setup { context =>
-      println("GrcpServer waiting for creation")
+      println("storeGRCP.GrcpServer waiting for creation")
       val listingResponseAdapter = context.messageAdapter[Receptionist.Listing](ListingResponse.apply)
       context.system.receptionist ! Receptionist.Subscribe(Store.storeServiceKey, listingResponseAdapter)
       new GrcpServerStartup(context, port, host)
@@ -30,7 +32,7 @@ object GrcpServer{
 
   def apply(port: Int, host: String, storeRef:ActorRef[Store.Command]): Behavior[ServerCommand] =
     Behaviors.setup { context =>
-      println("GrcpServer found store and will create itself")
+      println("storeGRCP.GrcpServer found store and will create itself")
       new GrcpServer(context, port, host,storeRef)
     }
 }
@@ -40,13 +42,12 @@ class  GrcpServerStartup  (context: ActorContext[GrcpServer.ServerCommand], port
   override def onMessage(msg: ServerCommand): Behavior[ServerCommand] = msg match {
 
     case ListingResponse(listing) => {
-      //fetches a client ref and creates a new ObserverAndExecutor
       println("store found")
       val stores = listing.serviceInstances(Store.storeServiceKey)
       print(stores)
       val store = stores.headOption
       store match {
-        case Some(storeRef) => context.spawnAnonymous(GrcpServer(port,host,storeRef))
+        case Some(storeRef) => context.spawnAnonymous(storeGRCP.GrcpServer(port,host,storeRef))
         case _ => println("store couldn't be started")
       }
       Behaviors.same
@@ -61,9 +62,9 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
                     port:Int, host:String, store:ActorRef[Store.Command]
                    )extends AbstractBehavior[GrcpServer.ServerCommand](context) {
   import GrcpServer._
-  import scala.concurrent.ExecutionContext.Implicits.global
   import akka.util.Timeout
-  import scala.concurrent.duration.Duration
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   val logger = Logger.getLogger(GrcpServer.getClass.getName)
   logger.info("booting up server")
@@ -96,9 +97,9 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
       val replyTo = context.spawnAnonymous(Responses()) // hier darf ich scheinbar keinen aktor spawnen, muss ich in message machen
       //hier mit ask arbeiten
       logger.info("pre")
-      //store ! Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
+      //store ! akkaStore.Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
 
-      //val result = store ? Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
+      //val result = store ? akkaStore.Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
       val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
       logger.info("post")
 
@@ -110,7 +111,7 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
       Behaviors.same
     }
     case _ => {
-      context.log.info("Faulty Message (to Client)")
+      context.log.info("Faulty Message (to akkaStore.Client)")
       context.log.info(message.toString)
       Behaviors.same
     }

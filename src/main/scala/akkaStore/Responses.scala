@@ -1,4 +1,6 @@
-import akka.actor.typed.{ActorRef, Behavior}
+package akkaStore
+
+import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 
 import java.nio.charset.StandardCharsets
@@ -59,7 +61,7 @@ class Responses private (context: ActorContext[Responses.Result]) extends Abstra
     }
     case _ => {
       context.log.info(message.toString)
-      context.log.info("Faulty Message (to Responses)")
+      context.log.info("Faulty Message (to akkaStore.Responses)")
       Behaviors.stopped
     }
   }

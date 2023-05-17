@@ -1,7 +1,8 @@
+package akkaStore
+
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior}
 
 import scala.io.Source
 import scala.util.Using
@@ -26,9 +27,7 @@ object FileReader {
 class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
   extends AbstractBehavior[FileReader.Message](context) {
 
-  import FileReader.Message
-  import FileReader.ListingResponse
-  import Client._
+  import FileReader.{ListingResponse, Message}
   val batch_size=500
   override def onMessage(message: Message): Behavior[Message] = message match {
 
@@ -38,7 +37,7 @@ class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
       clients.size match {
         case 0 =>
         case _ =>
-          clients.foreach(client => context.self ! FileReader.File("../trip_data_1000_000.csv", client))
+          clients.foreach(client => context.self ! FileReader.File("../../trip_data_1000_000.csv", client))
       }
       Behaviors.same
     }
@@ -46,11 +45,13 @@ class FileReader (context: ActorContext[FileReader.Message],num_of_lines:Int)
     case FileReader.File(filename: String, client: ActorRef[Client.Command]) => {
       println("Reading Files by Line")
       Using(Source.fromFile(filename)){ reader =>
-        reader.getLines().take(num_of_lines)
+        reader.getLines()
           .map(line => (line.split(",")(0), line.split(",")(1)))
           .grouped(batch_size)
           .buffered
+          .take(num_of_lines)
           .foreach(batch => {
+            print("batch")
             client ! Client.Set(batch.toList)
 
           })

@@ -1,10 +1,11 @@
-import Responses.{CountResult, GetResultSuccessful, Result, SetResult}
+package akkaStore
+
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
+import akka.cluster.sharding.typed.scaladsl.ClusterSharding
+import akkaStore.Responses.{CountResult, Result}
 
-import java.nio.charset.StandardCharsets
 import scala.math.abs
 
 object Store{
@@ -21,7 +22,7 @@ object Store{
   def apply(): Behavior[Command] = {
     Behaviors.setup { context =>
       context.system.receptionist ! Receptionist.Register(Store.storeServiceKey, context.self)
-      println("Creating Store")
+      println("Creating akkaStore.Store")
       new Store(context)
     }
   }
@@ -80,7 +81,7 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
     }
 
     case _ => {
-      context.log.info("Unexpected Message received (by Store)")
+      context.log.info("Unexpected Message received (by akkaStore.Store)")
       this
     }
   }

@@ -1,9 +1,10 @@
+package akkaStore
 
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, MailboxSelector}
+
+import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior}
 
-import akka.actor.typed.receptionist.Receptionist
-import akka.actor.typed.receptionist.ServiceKey
 import scala.language.postfixOps
 
 object Client {
@@ -68,7 +69,7 @@ class  Client  (context: ActorContext[Client.Command], connectedStore:Option[Act
     }
 
     case _ => {
-      context.log.info("Faulty Message (to Client)")
+      context.log.info("Faulty Message (to akkaStore.Client)")
       context.log.info(message.toString)
       Behaviors.same
     }

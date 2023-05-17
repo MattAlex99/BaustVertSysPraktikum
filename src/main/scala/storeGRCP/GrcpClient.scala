@@ -1,12 +1,11 @@
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+package storeGRCP
+
+import de.hfu.protos.messages._
 import io.grpc.{ManagedChannel, ManagedChannelBuilder}
 
 import java.util.logging.Logger
-import scala.util.{Failure, Success, Try}
-import de.hfu.protos.messages._
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success, Try}
 
 
 
