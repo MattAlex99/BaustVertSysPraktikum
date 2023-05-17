@@ -54,9 +54,9 @@ object Guard {
 
           scala.io.StdIn.readLine()
 
-          val configuration1 = Utils.createConfiguration(25251)
-          val clientSystem = ActorSystem(GrcpClient(50051, "localhost"), "hfu", configuration1)
-          clientSystem ! (GrcpClient.Set("myKey", "Myvalue"))
+          //val configuration1 = Utils.createConfiguration(25251)
+          //val clientSystem = ActorSystem(GrcpClient(50051, "localhost"), "hfu", configuration1)
+          //clientSystem ! (GrcpClient.Set("myKey", "Myvalue"))
 
 
         case "5" =>

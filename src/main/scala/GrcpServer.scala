@@ -84,6 +84,11 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
     return result
   }
 
+  def getKV(key:String):Future[Responses.Result]={
+    val result = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
+    return result
+  }
+
 
   override def onMessage(message: ServerCommand): Behavior[ServerCommand] = message match {
     case Set(key:String,value:String,replyTo: ActorRef[Responses.Result])=>{
