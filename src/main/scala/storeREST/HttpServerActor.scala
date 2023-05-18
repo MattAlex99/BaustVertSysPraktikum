@@ -17,7 +17,7 @@ import storeGRCP.GrcpServer.ServerCommand
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 object HttpServerActor{
   sealed trait HttpServerCommand
@@ -75,10 +75,37 @@ class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerComm
   def Setkv(key: String, value: String):Unit = {
     implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler = context.system.scheduler
-    //val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
     val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
     return result
   }
+
+  def getKVFuture(key:String):Future[Option[Item]] ={
+    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val scheduler = context.system.scheduler
+    val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
+    println("get reply:", reply)
+    val promise = Promise[Option[Item]]
+    reply.onComplete {
+      case Success(response) =>
+        println("complete future")
+        val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
+        casted_response.value match {
+          case Some(value) =>
+            val item = Item(Utils.customByteToString(casted_response.key), Utils.customByteToString(value))
+            promise.success(Some(item))
+          case _ =>
+            println("uncomplete Future")
+            promise.success(None)
+        }
+      case Failure(exception: Exception) =>
+        exception.printStackTrace()
+         None
+      case _ => None
+    }
+    print("primse",promise)
+    promise.future
+  }
+
   def getKV(key: String): Option[Item] = {
     implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler = context.system.scheduler

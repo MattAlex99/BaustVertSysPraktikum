@@ -9,6 +9,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 // for JSON serialization/deserialization following dependency is required:
 // "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.7"
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -46,7 +48,13 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
   //implicit val orderFormat: RootJsonFormat[Order] = jsonFormat1(Order.apply)
 
   // (fake) async database query api
-  def fetchItem(itemKey: String): Future[Option[Item]] = Future {
+
+  def fetchItemByPromise(itemKey: String): Future[Option[Item]] = Future {
+    val promise=setGetReciever.getKVFuture(itemKey)
+    Await.result(promise,5.seconds)
+  }
+
+    def fetchItem(itemKey: String): Future[Option[Item]] = Future {
     val response = setGetReciever.getKV(itemKey)
     println("fetched response:",response)
 
@@ -88,7 +96,7 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
         get {
           pathPrefix("get" / Segment) { key =>
             // there might be no item for a given id
-            val maybeItem: Future[Option[Item]] = fetchItem(key)
+            val maybeItem: Future[Option[Item]] = fetchItemByPromise(key)
 
             onSuccess(maybeItem) {
               case Some(item) =>
