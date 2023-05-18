@@ -76,7 +76,6 @@ class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerComm
     implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler = context.system.scheduler
     val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
-    return result
   }
 
   def getKVFuture(key:String):Future[Option[Item]] ={
@@ -106,37 +105,7 @@ class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerComm
     promise.future
   }
 
-  def getKV(key: String): Option[Item] = {
-    implicit val timeout: Timeout = Timeout(5.seconds)
-    implicit val scheduler = context.system.scheduler
-    val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
-    println("get reply:",reply)
-    var defaultItem: Option[Item]= None
-    val promise = Promise[Option[Item]]()
-    reply.onComplete {
-      case Success(response) =>
-        println("complete future")
-        val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
-        casted_response.value match {
-          case Some(value) =>
-            val item = new Item(Utils.customByteToString(casted_response.key),Utils.customByteToString(value))
-            defaultItem=Some(item)
-            println("item:",item)
-            promise.success(Some(item))
-             Some(item)
-          case _ =>
-            println("uncomplete Future")
-             None
-        }
-      case Failure(exception: Exception) =>
-        exception.printStackTrace()
-        return None
-      case _ => None
-    }
-    Thread.sleep(1000)
-    defaultItem
 
-  }
 
   override def onMessage(message: HttpServerCommand): Behavior[HttpServerCommand] = message match {
     case _ =>

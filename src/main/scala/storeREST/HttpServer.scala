@@ -54,37 +54,9 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
     Await.result(promise,5.seconds)
   }
 
-    def fetchItem(itemKey: String): Future[Option[Item]] = Future {
-    val response = setGetReciever.getKV(itemKey)
-    println("fetched response:",response)
-
-    val weirdResults: ListBuffer[Item] = ListBuffer.empty[Item]
-    var returnValue:Option[Item]=None
-    response match {
-      case Some(value) =>
-        println("item was fetched",value)
-        //TODO Fragen warum zur Hölle dashier funktioniert und ein einfacher return nicht
-        weirdResults+=value
-        returnValue=Some(value)
-        //return  Future.successful(Some(Item("a","b")))
-      case None =>
-        println("item wasnt fetched")
-        return Future.successful(None)
-    }
-    println("default case in fetch")
-    None
-    //replace with call to SetGetReciever
-    println(weirdResults)
-    //weirdResults.find(o => o.key == itemKey)
-    returnValue
-
-  }
 
   def saveOrder(item: Item): Future[Done] = {
     setGetReciever.Setkv(item.key,item.value)
-
-    //replace with call to SetGetReciever
-    //orders = item ::: orders
     Future {
      Done
     }

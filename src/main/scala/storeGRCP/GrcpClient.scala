@@ -36,7 +36,7 @@ class  GrcpClient  (port:Int,host:String){
       case Success(succ_response) =>
         succ_response.value match {
           case Some(response_key) =>
-            logger.info ("recieved response with key: " + succ_response.key + " value: " + response_key)
+            logger.info ("recieved get response with key: " + succ_response.key + " value: " + response_key)
           case None =>
             logger.info("No entry for key "+ succ_response.key + "was found")
         }

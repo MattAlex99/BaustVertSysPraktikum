@@ -7,7 +7,7 @@ import akkaStore.{Responses, Utils}
 import de.hfu.protos.messages._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
@@ -20,8 +20,14 @@ class GrcpClientImpl(server:GrcpServer,serverRef:ActorRef[GrcpServer.ServerComma
   // the ask is failed with a TimeoutException
   implicit val timeout: Timeout = 3.seconds
   implicit val scheduler = context.system.scheduler
-
   override def get(request: GetRequest): Future[GetReply] = {
+    val promise = server.getKVFuture(request.key)
+    Await.result(promise, 5.seconds)
+    promise
+  }
+
+/*
+  override def get_old(request: GetRequest): Future[GetReply] = {
 
     val serverResponse: Future[Responses.Result] = server.getKV(request.key)
     val serverResponse_mapped: Future[Responses.GetResultSuccessful] = serverResponse.map(a => a.asInstanceOf[Responses.GetResultSuccessful])
@@ -65,14 +71,21 @@ class GrcpClientImpl(server:GrcpServer,serverRef:ActorRef[GrcpServer.ServerComma
     return Future.successful(res)
   }
 
+ */
+
   override def set(request: SetRequest): Future[SetReply] = {
+    val promise = server.setKVFuture(request.key,request.value)
+    Await.result(promise, 5.seconds)
+    promise
+  }
+
+
+    /*
+
+    override def set(request: SetRequest): Future[SetReply] = {
     println("recieved Set Command with:")
     println("  "+request.key+" "+request.value)
-    //serverRef ! storeGRCP.GrcpServer.Set(request.key,request.value)
-    //XXX
 
-
-    //val result: Future[akkaStore.Responses.Result] = serverRef ? (ref => storeGRCP.GrcpServer.Set(request.key,request.value,ref))
     val serverResponse: Future[Responses.Result] = server.Setkv(request.key, request.value)
     val serverResponse_mapped:Future[Responses.SetResult]=serverResponse.map(a=> a.asInstanceOf[Responses.SetResult])
     println("")
@@ -100,6 +113,8 @@ class GrcpClientImpl(server:GrcpServer,serverRef:ActorRef[GrcpServer.ServerComma
     //return Future.failed(new Exception("mayor error, while waiting for responese"))
     return Future.successful(res)
   }
+  */
+
 }
 
 

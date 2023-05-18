@@ -1,18 +1,17 @@
 package storeGRCP
 
 import akkaStore._
-
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.AskPattern.Askable
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import akkaStore.{Responses, Store}
-import de.hfu.protos.messages.GrpcClientGrpc
+import de.hfu.protos.messages.{GetReply, GrpcClientGrpc, SetReply}
 import io.grpc.ServerBuilder
 
 import java.util.logging.Logger
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 object GrcpServer{
   sealed trait ServerCommand
@@ -80,6 +79,55 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
 
   implicit val timeout: Timeout = Timeout(3.seconds)
   implicit val scheduler = context.system.scheduler
+
+
+  def setKVFuture(key: String,value:String): Future[SetReply] = {
+    println("in future setter")
+    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val scheduler = context.system.scheduler
+    val reply = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
+    println("get reply:", reply)
+    val promise = Promise[SetReply]
+    reply.onComplete {
+      case Success(response) =>
+        println("complete future")
+        val casted_response = response.asInstanceOf[Responses.SetResult]
+        val item = SetReply(Utils.customByteToString(casted_response.key), Utils.customByteToString(casted_response.value))
+        promise.success(item)
+      case Failure(exception: Exception) =>
+        exception.printStackTrace()
+        None
+      case _ => None
+    }
+    promise.future
+  }
+  def getKVFuture(key: String): Future[GetReply] = {
+    println("in future getter")
+    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val scheduler = context.system.scheduler
+    val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
+    println("get reply:", reply)
+    val promise = Promise[GetReply]
+    reply.onComplete {
+      case Success(response) =>
+        println("complete future")
+        val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
+        casted_response.value match {
+          case Some(value) =>
+            //val item = Item(Utils.customByteToString(casted_response.key), Utils.customByteToString(value))
+            val item = GetReply(Utils.customByteToString(casted_response.key), Some(Utils.customByteToString(value)))
+            promise.success(item)
+          case _ =>
+            val item = GetReply(Utils.customByteToString(casted_response.key),None)
+            promise.success(item)
+        }
+      case Failure(exception: Exception) =>
+        exception.printStackTrace()
+        None
+      case _ => None
+    }
+    promise.future
+  }
   def Setkv(key:String,value:String):Future[Responses.Result]={
     val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
     return result
@@ -97,9 +145,7 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
       val replyTo = context.spawnAnonymous(Responses()) // hier darf ich scheinbar keinen aktor spawnen, muss ich in message machen
       //hier mit ask arbeiten
       logger.info("pre")
-      //store ! akkaStore.Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
 
-      //val result = store ? akkaStore.Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq)
       val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
       logger.info("post")
 
