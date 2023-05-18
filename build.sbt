@@ -25,3 +25,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % "2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-serialization-jackson" %"2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-cluster-sharding-typed" % "2.8.0"
 
+libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.8.0"
+libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.5.2"
+
+libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.5.2"

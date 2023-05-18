@@ -44,6 +44,7 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
 
     //Processing Get requests
     case Get(replyTo: ActorRef[Result], key: Seq[Byte]) => {
+      println("getting here", key)
       val shardId=getShardID(key)
       val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
       ref ! StoreShard.Get(replyTo,key)
