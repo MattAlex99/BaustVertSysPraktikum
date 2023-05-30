@@ -32,22 +32,11 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
 
   // needed to run the route
   implicit val system: ActorSystem[_] = usedSystem
+
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext: ExecutionContext = system.executionContext
-
-
-  //val newItem:Item= Item("abcd",42)
-  //saveOrder(Order( newItem::Nil ))
-
-  // domain model
-
-  //final case class Order(items: List[Item])
-
-  // formats for unmarshalling and marshalling
   implicit val itemFormat: RootJsonFormat[Item] = jsonFormat2(Item.apply)
-  //implicit val orderFormat: RootJsonFormat[Order] = jsonFormat1(Order.apply)
 
-  // (fake) async database query api
 
   def fetchItemByPromise(itemKey: String): Future[Option[Item]] = Future {
     val promise=setGetReciever.getKVFuture(itemKey)
@@ -69,7 +58,6 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
           pathPrefix("get" / Segment) { key =>
             // there might be no item for a given id
             val maybeItem: Future[Option[Item]] = fetchItemByPromise(key)
-
             onSuccess(maybeItem) {
               case Some(item) =>
                 println("webside displays item")
@@ -85,7 +73,7 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
           }
         },
         post {
-          path("create-order") {
+          path("set") {
             entity(as[Item]) { order =>
               val saved: Future[Done] = saveOrder(order)
               onSuccess(saved) { _ => // we are not interested in the result value `Done` but only in the fact that it was successful

@@ -10,14 +10,10 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
 import akka.util.Timeout
 import akkaStore.{Responses, Store}
-import de.hfu.protos.messages.GrpcClientGrpc
-import io.grpc.ServerBuilder
-import storeGRCP.GrcpServer.ServerCommand
 
-import java.util.logging.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 object HttpServerActor{
   sealed trait HttpServerCommand
@@ -45,14 +41,14 @@ object HttpServerActor{
 class  HttpServerStartup  (context: ActorContext[HttpServerActor.HttpServerCommand], port:Int, host:String)extends AbstractBehavior[HttpServerActor.HttpServerCommand](context) {
   import HttpServerActor._
   override def onMessage(msg: HttpServerCommand): Behavior[HttpServerCommand] = msg match {
-
     case ListingResponse(listing) => {
-      println("store found")
       val stores = listing.serviceInstances(Store.storeServiceKey)
       print(stores)
       val store = stores.headOption
       store match {
-        case Some(storeRef) => context.spawnAnonymous(HttpServerActor(port,host,storeRef))
+        case Some(storeRef) =>
+          println("starting Store")
+          context.spawnAnonymous(HttpServerActor(port,host,storeRef))
         case _ => println("store couldn't be started")
       }
       Behaviors.same
@@ -79,29 +75,34 @@ class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerComm
   }
 
   def getKVFuture(key:String):Future[Option[Item]] ={
-    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val timeout: Timeout = Timeout(6.seconds)
     implicit val scheduler = context.system.scheduler
+
     val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
-    println("get reply:", reply)
+
     val promise = Promise[Option[Item]]
     reply.onComplete {
       case Success(response) =>
-        println("complete future")
+        //println("get was succes")
         val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
         casted_response.value match {
           case Some(value) =>
+            //if a key is found and it has a valid value
             val item = Item(Utils.customByteToString(casted_response.key), Utils.customByteToString(value))
             promise.success(Some(item))
           case _ =>
-            println("uncomplete Future")
+            //if key is found, but its value is None
             promise.success(None)
         }
       case Failure(exception: Exception) =>
+        //if there is an exception
         exception.printStackTrace()
-         None
-      case _ => None
+        promise.success(None)
+      case _ =>
+        //if a key is not found in the stored data
+        promise.success(None)
     }
-    print("primse",promise)
+
     promise.future
   }
 

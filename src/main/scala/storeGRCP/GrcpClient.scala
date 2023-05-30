@@ -12,8 +12,6 @@ import scala.util.{Failure, Success, Try}
 
 
 class  GrcpClient  (port:Int,host:String){
-
-
   val logger = Logger.getLogger(this.getClass.getName)
   val channel: ManagedChannel = ManagedChannelBuilder
     .forAddress(host, port)

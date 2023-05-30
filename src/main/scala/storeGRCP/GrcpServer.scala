@@ -15,8 +15,6 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 object GrcpServer{
   sealed trait ServerCommand
-  case class Set(key:String,value: String,replyTo: ActorRef[Responses.Result]) extends ServerCommand
-
 
   val serviceKey: ServiceKey[ServerCommand] = ServiceKey[ServerCommand]("GrcpServerKey")
   case class ListingResponse(listing: Receptionist.Listing) extends ServerCommand
@@ -67,7 +65,7 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
 
   val logger = Logger.getLogger(GrcpServer.getClass.getName)
   logger.info("booting up server")
-  val service = GrpcClientGrpc.GrpcClient.bindService(new GrcpClientImpl(this,context.self,context), ExecutionContext.global)
+  val service = GrpcClientGrpc.GrpcClient.bindService(new GrcpClientImpl(this,context), ExecutionContext.global)
   val server = ServerBuilder
     .forPort(port)
     .addService(service)
@@ -82,39 +80,37 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
 
 
   def setKVFuture(key: String,value:String): Future[SetReply] = {
-    println("in future setter")
+    //implicits arent srictly necessairy here as they are already defined in the class, but I want to
+    //make it obvious that this method uses impicits
     implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler = context.system.scheduler
     val reply = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
-    println("get reply:", reply)
     val promise = Promise[SetReply]
     reply.onComplete {
       case Success(response) =>
-        println("complete future")
         val casted_response = response.asInstanceOf[Responses.SetResult]
         val item = SetReply(Utils.customByteToString(casted_response.key), Utils.customByteToString(casted_response.value))
         promise.success(item)
       case Failure(exception: Exception) =>
         exception.printStackTrace()
         None
-      case _ => None
+      case _ =>
+        None
     }
     promise.future
   }
   def getKVFuture(key: String): Future[GetReply] = {
-    println("in future getter")
+    //implicits arent srictly necessairy here as they are already defined in the class, but I want to
+    //make it obvious that this method uses impicits
     implicit val timeout: Timeout = Timeout(5.seconds)
     implicit val scheduler = context.system.scheduler
     val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
-    println("get reply:", reply)
     val promise = Promise[GetReply]
     reply.onComplete {
       case Success(response) =>
-        println("complete future")
         val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
         casted_response.value match {
           case Some(value) =>
-            //val item = Item(Utils.customByteToString(casted_response.key), Utils.customByteToString(value))
             val item = GetReply(Utils.customByteToString(casted_response.key), Some(Utils.customByteToString(value)))
             promise.success(item)
           case _ =>
@@ -128,6 +124,7 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
     }
     promise.future
   }
+
   def Setkv(key:String,value:String):Future[Responses.Result]={
     val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
     return result
@@ -140,24 +137,8 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
 
 
   override def onMessage(message: ServerCommand): Behavior[ServerCommand] = message match {
-    case Set(key:String,value:String,replyTo: ActorRef[Responses.Result])=>{
-      logger.info("in set Key")
-      val replyTo = context.spawnAnonymous(Responses()) // hier darf ich scheinbar keinen aktor spawnen, muss ich in message machen
-      //hier mit ask arbeiten
-      logger.info("pre")
-
-      val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
-      logger.info("post")
-
-      result.onComplete {
-        case Success(value) => logger.info("got ask response")
-        logger.info(result.toString)
-        case Failure(exception) => exception.printStackTrace()
-      }
-      Behaviors.same
-    }
     case _ => {
-      context.log.info("Faulty Message (to akkaStore.Client)")
+      context.log.info("This actor Takes no Messages (to akkaStore.Client)")
       context.log.info(message.toString)
       Behaviors.same
     }
