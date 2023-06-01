@@ -74,7 +74,6 @@ class Store private (context: ActorContext[Store.Command])extends AbstractBehavi
     case Set(replyTo: ActorRef[Result], key: Seq[Byte], value: Seq[Byte]) => {
       //sets a single key value pair into its respective shardStore
       val shardId = getShardID(key)
-      println("setting here",key,value)
       val ref = sharding.entityRefFor(StoreShard.TypeKey, shardId)
       ref ! StoreShard.Set(replyTo, key, value)
       Behaviors.same

@@ -4,10 +4,10 @@ object MainGrcpClient  extends App{
 
   val client = new GrcpClient(50051,"localhost")
   scala.io.StdIn.readLine()
-  client.setKV("myKey","myValue")
+  client.set("myKey","myValue")
   scala.io.StdIn.readLine()
-  client.getKV("myKey")
-  client.getKV("yourKey")
+  client.getDirect("myKey")
+  client.getDirect("yourKey")
   Thread.sleep(1000000)
 }
 

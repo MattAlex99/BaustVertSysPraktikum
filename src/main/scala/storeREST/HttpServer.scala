@@ -62,14 +62,14 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
             val maybeItem: Future[Option[Item]] = fetchItemByPromise(key)
             onSuccess(maybeItem) {
               case Some(item) =>
-                println("webside displays item")
+                //println("webside displays item")
                 complete(item)
               case None =>
-                println("no Item to display was found")
-                println("maybeItem",maybeItem)
+                //println("no Item to display was found")
+                //println("maybeItem",maybeItem)
                 complete(StatusCodes.NotFound)
               case _ =>
-                println("Webside deiplays nothing")
+                //println("Webside deiplays nothing")
                 complete("nothing was fetched")
             }
           }

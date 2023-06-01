@@ -29,3 +29,12 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.8.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.5.2"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json" % "10.5.2"
+
+
+libraryDependencies += "com.lihaoyi" %% "requests" % "0.8.0"
+
+libraryDependencies += "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % "3.8.13"
+libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.32"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.6"
+
+libraryDependencies += "io.spray" %% "spray-json" % "1.3.6"

@@ -9,6 +9,9 @@ class Demo(client: StoreClient) {
   private def get(key: String): Unit = {
     client.get(key, executeAction(key))
   }
+
+
+
   client.set("DE", "Germany")
   get("DE")
   get("UK")

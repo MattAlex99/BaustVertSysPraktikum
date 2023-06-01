@@ -1,7 +1,8 @@
 package storeGRCP
 
 import de.hfu.protos.messages._
-import io.grpc.{ManagedChannel, ManagedChannelBuilder}
+import io.grpc.{ConnectivityState, ManagedChannel, ManagedChannelBuilder}
+import storeCombined.StoreClient
 
 import java.util.logging.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 
 
 
-class  GrcpClient  (port:Int,host:String){
+class  GrcpClient  (port:Int,host:String) extends StoreClient{
   val logger = Logger.getLogger(this.getClass.getName)
   val channel: ManagedChannel = ManagedChannelBuilder
     .forAddress(host, port)
@@ -19,6 +20,23 @@ class  GrcpClient  (port:Int,host:String){
     .asInstanceOf[ManagedChannelBuilder[_]]
     .build()
   logger.info("opening channel on "+host+":"+port)
+
+
+  // Nachträglich eingefügt
+  def waitForChannelReady(): Unit = {
+    var state = channel.getState(true)
+    while (state != ConnectivityState.READY) {
+      println("Channel is not available. Waiting...")
+      Thread.sleep(2000) // Adjust the sleep duration as needed
+      state = channel.getState(true)
+    }
+    println("Channel is available. Client can now be used")
+  }
+
+  this.waitForChannelReady()
+
+
+
 
   def print_set_reply(response:Try[SetReply])={
     response match {
@@ -40,7 +58,39 @@ class  GrcpClient  (port:Int,host:String){
     }
   }
 
-    def getKV(key: String) = {
+
+    def getReplyToOptionString(input:Try[GetReply]):Option[String] = {
+      input match {
+        case Success(succ_response) =>
+          succ_response.value match {
+            case Some(response_value) =>
+              return Some(response_value)
+            case None =>
+              return None
+          }
+        case Failure(exception: Exception) =>
+          exception.printStackTrace()
+          return  None
+      }
+
+    }
+    def get(key: String, action: Option[String] => Unit): Unit= {
+      val asynch_request = GetRequest(key)
+      logger.info("try to Get key " + key)
+      try {
+        val reply = GrpcClientGrpc
+          .stub(channel)
+          .get(asynch_request)
+          .onComplete(va => action(getReplyToOptionString (va))) //implicit context oben importiert (import scala.concurrent.ExecutionContext.Implicits.global)
+      } catch {
+        case e: Exception => e.printStackTrace()
+      }
+    }
+
+
+
+
+  def getDirect(key: String) = {
       val asynch_request = GetRequest(key)
       logger.info("try to Get key " + key)
       try {
@@ -53,9 +103,10 @@ class  GrcpClient  (port:Int,host:String){
       }
     }
 
-    def setKV(key:String, value:String) = {
+    def set(key:String, value:String) = {
       val asynch_request = SetRequest(key,value)
       logger.info("try to set key " + key + "to value "+ value)
+
       try {
         val reply = GrpcClientGrpc
           .stub(channel)
