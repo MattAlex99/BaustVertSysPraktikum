@@ -21,7 +21,6 @@ class  GrcpClient  (port:Int,host:String){
   logger.info("opening channel on "+host+":"+port)
 
   def print_set_reply(response:Try[SetReply])={
-    logger.info("may have recived a response:")
     response match {
       case Success(succ_response) => logger.info("recieved set response with key: " + succ_response.key+" value: "+succ_response.value)
       case Failure(exception: Exception) => exception.printStackTrace()
@@ -29,7 +28,6 @@ class  GrcpClient  (port:Int,host:String){
   }
 
   def print_get_reply(response: Try[GetReply]) = {
-    logger.info("may have recived a get response:")
     response match {
       case Success(succ_response) =>
         succ_response.value match {

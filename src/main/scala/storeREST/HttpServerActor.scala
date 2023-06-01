@@ -62,6 +62,7 @@ class  HttpServerStartup  (context: ActorContext[HttpServerActor.HttpServerComma
 class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerCommand],
                             port:Int, host:String, store:ActorRef[Store.Command]
                    )extends AbstractBehavior[HttpServerActor.HttpServerCommand](context) {
+  //Klassem die Verbindung zwischen Http und Akka server bietet
   import HttpServerActor._
   import storeREST.HttpServer.Item
   val localHttpServer = new  HttpServer(context.system,this)
@@ -83,7 +84,6 @@ class  HttpServerComplete  (context: ActorContext[HttpServerActor.HttpServerComm
     val promise = Promise[Option[Item]]
     reply.onComplete {
       case Success(response) =>
-        //println("get was succes")
         val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
         casted_response.value match {
           case Some(value) =>

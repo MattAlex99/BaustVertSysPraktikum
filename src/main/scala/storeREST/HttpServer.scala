@@ -23,6 +23,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object HttpServer{
+  //Klasse die HTTP Server Funktionalität umsetzt (senden und empfangen via HTTP)
+
   final case class Item(key: String, value:String)
 
 }

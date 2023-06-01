@@ -65,6 +65,8 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
 
   val logger = Logger.getLogger(GrcpServer.getClass.getName)
   logger.info("booting up server")
+
+  //start a GRCPClientImpl, that will recieve messages from the GRCP Client and pass it on to the GRCP Server
   val service = GrpcClientGrpc.GrpcClient.bindService(new GrcpClientImpl(this,context), ExecutionContext.global)
   val server = ServerBuilder
     .forPort(port)
@@ -88,12 +90,13 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
     val promise = Promise[SetReply]
     reply.onComplete {
       case Success(response) =>
+        //extract the relevant information on succes
         val casted_response = response.asInstanceOf[Responses.SetResult]
         val item = SetReply(Utils.customByteToString(casted_response.key), Utils.customByteToString(casted_response.value))
         promise.success(item)
       case Failure(exception: Exception) =>
         exception.printStackTrace()
-        None
+        promise.failure(exception)
       case _ =>
         None
     }
@@ -106,14 +109,17 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
     implicit val scheduler = context.system.scheduler
     val reply = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
     val promise = Promise[GetReply]
+    //cover both successful and failed remote call
     reply.onComplete {
       case Success(response) =>
         val casted_response = response.asInstanceOf[Responses.GetResultSuccessful]
         casted_response.value match {
           case Some(value) =>
+            //if the set value has a vlaid Key, extract relevant info
             val item = GetReply(Utils.customByteToString(casted_response.key), Some(Utils.customByteToString(value)))
             promise.success(item)
           case _ =>
+            //if thr relevant item is not found  create a reply with None as value
             val item = GetReply(Utils.customByteToString(casted_response.key),None)
             promise.success(item)
         }
@@ -125,15 +131,6 @@ class  GrcpServer  (context: ActorContext[GrcpServer.ServerCommand],
     promise.future
   }
 
-  def Setkv(key:String,value:String):Future[Responses.Result]={
-    val result = store ? (replyTo => Store.Set(replyTo, key.getBytes().toSeq, value.getBytes().toSeq))
-    return result
-  }
-
-  def getKV(key:String):Future[Responses.Result]={
-    val result = store ? (replyTo => Store.Get(replyTo, key.getBytes().toSeq))
-    return result
-  }
 
 
   override def onMessage(message: ServerCommand): Behavior[ServerCommand] = message match {
