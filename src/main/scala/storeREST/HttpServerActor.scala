@@ -49,7 +49,7 @@ class  HttpServerStartup  (context: ActorContext[HttpServerActor.HttpServerComma
         case Some(storeRef) =>
           println("starting Store")
           context.spawnAnonymous(HttpServerActor(port,host,storeRef))
-        case _ => println("store couldn't be started")
+        case _ =>
       }
       Behaviors.same
     }

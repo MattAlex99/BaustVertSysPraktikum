@@ -57,19 +57,18 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
     val route: Route =
       concat(
         get {
+          pathPrefix("health-check") {
+            complete("is alive")
+          }
           pathPrefix("get" / Segment) { key =>
             // there might be no item for a given id
             val maybeItem: Future[Option[Item]] = fetchItemByPromise(key)
             onSuccess(maybeItem) {
               case Some(item) =>
-                //println("webside displays item")
                 complete(item)
               case None =>
-                //println("no Item to display was found")
-                //println("maybeItem",maybeItem)
                 complete(StatusCodes.NotFound)
               case _ =>
-                //println("Webside deiplays nothing")
                 complete("nothing was fetched")
             }
           }
@@ -88,7 +87,6 @@ class HttpServer(usedSystem: ActorSystem[_],setGetReciever:HttpServerComplete) {
 
     val bindingFuture = Http().newServerAt(host, port).bind(route)
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
-    //curl -H "Content-Type: application/json" -X POST -d {\"items\":[{\"name\":\"hhgtg\",\"id\":42}]} http://localhost:8080/create-order
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port

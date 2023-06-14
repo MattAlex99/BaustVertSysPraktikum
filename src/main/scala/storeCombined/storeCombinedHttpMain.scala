@@ -24,7 +24,6 @@ object storeCombinedHttpMain extends App {
   val client = new HttpClient("localhost","8080")
 
   //starte Demo
-  Thread.sleep(12000)
   val demo = new Demo(client)
 
 }

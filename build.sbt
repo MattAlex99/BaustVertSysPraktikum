@@ -38,3 +38,5 @@ libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.32"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.6"
 
 libraryDependencies += "io.spray" %% "spray-json" % "1.3.6"
+
+libraryDependencies += "com.github.cb372" %% "scalacache-caffeine" % "0.28.0"
