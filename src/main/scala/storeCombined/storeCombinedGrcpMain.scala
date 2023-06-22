@@ -19,7 +19,6 @@ object storeCombinedGrcpMain extends App {
   val client = new GrcpClient(50051,"localhost")
 
   //starte Demo
-
   val demo = new Demo(client)
 
 }

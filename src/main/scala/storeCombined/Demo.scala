@@ -13,6 +13,8 @@ class Demo(client: StoreClient) {
 
 
   client.set("DE", "Germany")
+  Thread.sleep(1000)
+
   get("DE")
   get("UK")
   Console.in.read()
